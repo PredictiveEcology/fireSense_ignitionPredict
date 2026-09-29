@@ -64,7 +64,7 @@ toyIgCovariates <- function(MDC = c(100, 120, 140, 160), year = 2001) {
                          year = year)
 }
 
-## The centre and scale the fit standardised its covariates with, as fireSense_IgnitionFit
+## The centre and scale the fit standardised its covariates with, as fireSense_ignitionFit
 ## stores them (the attributes of a scale()d matrix; `pixelID` and `year` are in there too).
 toyScaleData <- function(center = c(pixelID = 2.5, MDC = 100, youngAge = 0.5, year = 2000),
                          scale = c(pixelID = 1.3, MDC = 50, youngAge = 0.5, year = 10)) {
@@ -127,5 +127,5 @@ byPixel <- function(vals) function(nd) vals[nd$pixelID]
 
 evOf <- function(dt, type) {
   df <- as.data.frame(dt)
-  df[df$moduleName == "fireSense_IgnitionPredict" & df$eventType == type, , drop = FALSE]
+  df[df$moduleName == "fireSense_ignitionPredict" & df$eventType == type, , drop = FALSE]
 }

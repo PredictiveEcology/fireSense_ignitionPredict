@@ -10,7 +10,7 @@ start <- end <- 2
 
 # Define simulation parameters
 times <- list(start = start, end = end, timeunit = "year")
-modules <- list("fireSense_IgnitionPredict")
+modules <- list("fireSense_ignitionPredict")
 paths <- list(
   modulePath = modulePath
 )
@@ -29,7 +29,7 @@ paths <- list(
     gaussMap(scale = 300, var = 0.03, speedup = nx/5e2, inMemory = TRUE) %>%
     stack %>% setNames("weather")
 
-# Create a typical output of fireSense_IgnitionFit
+# Create a typical output of fireSense_ignitionFit
 fireSense_IgnitionFitted <- list(
   formula = fireFrequency ~ weather2,
   family = poisson(),
@@ -39,7 +39,7 @@ class(fireSense_IgnitionFitted) <- "fireSense_IgnitionFit"
 
 # Define module parameters
 parameters <- list(
-  fireSense_IgnitionPredict = list(
+  fireSense_ignitionPredict = list(
     modelName = "fireSense_IgnitionFitted",
     data = "dataFireSense_IgnitionPredict",
     mapping = list(weather2 = "weather"), # One can use mapping to map variables

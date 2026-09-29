@@ -1,5 +1,5 @@
 ---
-title: "fireSense_IgnitionPredict Manual"
+title: "fireSense_ignitionPredict Manual"
 subtitle: "v.1.0.0.9003"
 date: "Last updated: 2026-09-25"
 output:
@@ -12,15 +12,15 @@ output:
     keep_md: yes
 editor_options:
   chunk_output_type: console
-bibliography: citations/references_fireSense_IgnitionPredict.bib
+bibliography: citations/references_fireSense_ignitionPredict.bib
 link-citations: true
 always_allow_html: true
 ---
 
-# fireSense_IgnitionPredict Module
+# fireSense_ignitionPredict Module
 
 <!-- the following are text references used in captions for LaTeX compatibility -->
-(ref:fireSense-IgnitionPredict) *fireSense_IgnitionPredict*
+(ref:fireSense-ignitionPredict) *fireSense_ignitionPredict*
 
 
 
@@ -37,7 +37,7 @@ Eliot McIntire <eliot.mcintire@nrcan-rncan.gc.ca> [aut, cre], Ian Eddy <ian.eddy
 
 ### Module summary
 
-Each year, predicts ignitions and escapes from the models fitted by *fireSense_IgnitionFit* and *fireSense_EscapeFit*, for the ignition component of fireSense [@Marchal:2017a; @Marchal:2017b; @Marchal:2019].
+Each year, predicts ignitions and escapes from the models fitted by *fireSense_ignitionFit* and *fireSense_EscapeFit*, for the ignition component of fireSense [@Marchal:2017a; @Marchal:2017b; @Marchal:2019].
 
 1. The covariates in `fireSense_igAndEscapePred_Covariates` are rescaled with `fireSenseUtils::prepareCovariatesOuter()`, the function used for fitting (`rescaleVars`, `modelAlgorithm`).
 2. Expected ignitions per coarse pixel are the mean of the predictions of the per-fold ignition models; the number of ignitions is drawn from a Poisson.
@@ -51,10 +51,10 @@ Only `xgboost` models are supported.
 `ignitionFitRTM` (the coarse raster used for fitting, from *fireSense_dataPrepFit*) is also read from the `simList`, though it is not declared as an input.
 `modelAlgorithm` and `rescaleVars` must have the same value in every module that defines them.
 
-Table \@ref(tab:moduleInputs-fireSense-IgnitionPredict) shows the full list of module inputs.
+Table \@ref(tab:moduleInputs-fireSense-ignitionPredict) shows the full list of module inputs.
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
-<caption>(\#tab:moduleInputs-fireSense-IgnitionPredict)(\#tab:moduleInputs-fireSense-IgnitionPredict)List of (ref:fireSense-IgnitionPredict) input objects and their description.</caption>
+<caption>(\#tab:moduleInputs-fireSense-ignitionPredict)(\#tab:moduleInputs-fireSense-ignitionPredict)List of (ref:fireSense-ignitionPredict) input objects and their description.</caption>
  <thead>
   <tr>
    <th style="text-align:left;"> objectName </th>
@@ -91,7 +91,7 @@ Table \@ref(tab:moduleInputs-fireSense-IgnitionPredict) shows the full list of m
   <tr>
    <td style="text-align:left;"> fireSense_IgnitionFitted </td>
    <td style="text-align:left;"> fireSense_IgnitionFit </td>
-   <td style="text-align:left;"> Fitted ignition models (`$modelList$model`, one per fold) and `$modelList$fittingRes`, from `fireSense_IgnitionFit`. </td>
+   <td style="text-align:left;"> Fitted ignition models (`$modelList$model`, one per fold) and `$modelList$fittingRes`, from `fireSense_ignitionFit`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -109,11 +109,11 @@ Table \@ref(tab:moduleInputs-fireSense-IgnitionPredict) shows the full list of m
 </tbody>
 </table>
 
-Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-IgnitionPredict))
+Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignitionPredict))
 
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
-<caption>(\#tab:moduleParams-fireSense-IgnitionPredict)(\#tab:moduleParams-fireSense-IgnitionPredict)List of (ref:fireSense-IgnitionPredict) parameters and their description.</caption>
+<caption>(\#tab:moduleParams-fireSense-ignitionPredict)(\#tab:moduleParams-fireSense-ignitionPredict)List of (ref:fireSense-ignitionPredict) parameters and their description.</caption>
  <thead>
   <tr>
    <th style="text-align:left;"> paramName </th>
@@ -204,10 +204,10 @@ If `.saveInterval` is not `NA`, the ignition probability raster is plotted each 
 
 ### Module outputs
 
-Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-IgnitionPredict)).
+Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-ignitionPredict)).
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
-<caption>(\#tab:moduleOutputs-fireSense-IgnitionPredict)(\#tab:moduleOutputs-fireSense-IgnitionPredict)List of (ref:fireSense-IgnitionPredict) outputs and their description.</caption>
+<caption>(\#tab:moduleOutputs-fireSense-ignitionPredict)(\#tab:moduleOutputs-fireSense-ignitionPredict)List of (ref:fireSense-ignitionPredict) outputs and their description.</caption>
  <thead>
   <tr>
    <th style="text-align:left;"> objectName </th>
@@ -236,7 +236,7 @@ It is normally run as part of the [fireSense](https://github.com/PredictiveEcolo
 
 ### Getting help
 
-- <https://github.com/PredictiveEcology/fireSense_IgnitionPredict/issues>
+- <https://github.com/PredictiveEcology/fireSense_ignitionPredict/issues>
 
 ## References
 

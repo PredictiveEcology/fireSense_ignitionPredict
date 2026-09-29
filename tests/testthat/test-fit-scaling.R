@@ -1,5 +1,5 @@
 ## The models were fitted on covariates standardised once, over all fitting years. Prediction
-## must use that same centre and scale, which fireSense_IgnitionFit stores as `scaleData`.
+## must use that same centre and scale, which fireSense_ignitionFit stores as `scaleData`.
 
 oneFold <- function(covs, ...) toyIgInputs(list(constant(1)), list(constant(0)), covs = covs, ...)
 

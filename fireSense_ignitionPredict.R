@@ -1,8 +1,8 @@
 defineModule(sim, list(
-  name = "fireSense_IgnitionPredict",
+  name = "fireSense_ignitionPredict",
   description = paste(
     "Predicts annual ignition and escape probabilities from the models fitted by",
-    "fireSense_IgnitionFit and fireSense_EscapeFit, and draws the pixels that ignite and escape."),
+    "fireSense_ignitionFit and fireSense_EscapeFit, and draws the pixels that ignite and escape."),
   keywords = c("fire frequency", "additive property", "poisson", "negative binomial", "fireSense"),
   authors = c(
     person("Eliot", "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = c("aut", "cre")),
@@ -11,11 +11,11 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(SpaDES.core = "0.1.0", fireSense_IgnitionPredict = "1.0.0.9003"),
+  version = list(SpaDES.core = "0.1.0", fireSense_ignitionPredict = "1.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "fireSense_IgnitionPredict.Rmd"),
+  documentation = list("README.txt", "fireSense_ignitionPredict.Rmd"),
   reqdPkgs = list(
     "magrittr", "terra",
     "PredictiveEcology/fireSenseUtils@development (>=0.1.0)"
@@ -64,7 +64,7 @@ defineModule(sim, list(
                  desc = "Only with several fitted ELFs: each pixel's ELF (`ELFind`), from `fireSense_ELFs` with a `studyAreaLarge`."),
     expectsInput("fireSense_IgnitionFitted", "fireSense_IgnitionFit",
                  desc = paste("Fitted ignition models (`$modelList$model`, one per fold) and `$modelList$fittingRes`,",
-                              "from `fireSense_IgnitionFit`."),
+                              "from `fireSense_ignitionFit`."),
                  sourceURL = NA
     ),
     expectsInput("fireSense_igAndEscapePred_Covariates", "data.table",
@@ -102,7 +102,7 @@ defineModule(sim, list(
 #' @param debug Not used.
 #'
 #' @return The `simList`, invisibly.
-doEvent.fireSense_IgnitionPredict <- function(sim, eventTime, eventType, debug = FALSE) {
+doEvent.fireSense_ignitionPredict <- function(sim, eventTime, eventType, debug = FALSE) {
   moduleName <- currentModule(sim)
 
   switch(eventType,
@@ -120,7 +120,7 @@ doEvent.fireSense_IgnitionPredict <- function(sim, eventTime, eventType, debug =
            }
          },
          save = {
-           message("fireSense_IgnitionPredict: the `save` event does nothing.")
+           message("fireSense_ignitionPredict: the `save` event does nothing.")
          },
          warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                        "' in module '", current(sim)[1, "moduleName", with = FALSE], "'",
@@ -277,10 +277,10 @@ ignitionFitsByELF <- function(sim, pixelID) {
   if (length(ignL) > 1L) {
     escL <- sim$fireSense_EscapeFittedList
     if (!setequal(names(ignL), names(escL)))
-      stop("fireSense_IgnitionPredict: fireSense_IgnitionFittedList and fireSense_EscapeFittedList must name ",
+      stop("fireSense_ignitionPredict: fireSense_IgnitionFittedList and fireSense_EscapeFittedList must name ",
            "the same ELFs")
     if (is.null(sim$rasterToMatchLargeELF))
-      stop("fireSense_IgnitionPredict: several ignition fits need sim$rasterToMatchLargeELF to say which ELF ",
+      stop("fireSense_ignitionPredict: several ignition fits need sim$rasterToMatchLargeELF to say which ELF ",
            "each pixel is in")
     elfCoarse <- postProcess(sim$rasterToMatchLargeELF, to = sim$ignitionFitRTM, method = "near")
     v <- terra::values(elfCoarse[[1]], mat = FALSE)[pixelID]
@@ -288,7 +288,7 @@ ignitionFitsByELF <- function(sim, pixelID) {
     elf <- if (is.data.frame(lv) && NCOL(lv) >= 2) as.character(lv[[2]][match(v, lv[[1]])]) else as.character(v)
     noELF <- sum(!elf %in% names(ignL))
     if (noELF > 0)
-      warning("fireSense_IgnitionPredict: ", noELF, " coarse pixels are in no ELF with an ignition fit; ",
+      warning("fireSense_ignitionPredict: ", noELF, " coarse pixels are in no ELF with an ignition fit; ",
               "they get no ignitions", call. = FALSE)
     return(lapply(names(ignL), function(id)
       list(ign = ignL[[id]], esc = escL[[id]], rows = which(elf == id))))

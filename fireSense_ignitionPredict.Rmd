@@ -1,6 +1,6 @@
 ---
-title: "fireSense_IgnitionPredict Manual"
-subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'fireSense_IgnitionPredict', path = '..')$version`"
+title: "fireSense_ignitionPredict Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'fireSense_ignitionPredict', path = '..')$version`"
 date: "Last updated: `r Sys.Date()`"
 output:
   bookdown::html_document2:
@@ -12,17 +12,17 @@ output:
     keep_md: yes
 editor_options:
   chunk_output_type: console
-bibliography: citations/references_fireSense_IgnitionPredict.bib
+bibliography: citations/references_fireSense_ignitionPredict.bib
 link-citations: true
 always_allow_html: true
 ---
 
-# fireSense_IgnitionPredict Module
+# fireSense_ignitionPredict Module
 
 <!-- the following are text references used in captions for LaTeX compatibility -->
-(ref:fireSense-IgnitionPredict) *fireSense_IgnitionPredict*
+(ref:fireSense-ignitionPredict) *fireSense_ignitionPredict*
 
-```{r setup-fireSense-IgnitionPredict, include=FALSE}
+```{r setup-fireSense-ignitionPredict, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
 
 dir.create("figures", showWarnings = FALSE)
@@ -38,14 +38,14 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 
 #### Authors:
 
-`r paste(as.character(SpaDES.core::moduleMetadata(module = "fireSense_IgnitionPredict", path = '..')$authors), sep = ', ')`
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "fireSense_ignitionPredict", path = '..')$authors), sep = ', ')`
 <!-- ideally separate authors with new lines, '\n' not working -->
 
 ## Module Overview
 
 ### Module summary
 
-Each year, predicts ignitions and escapes from the models fitted by *fireSense_IgnitionFit* and *fireSense_EscapeFit*, for the ignition component of fireSense [@Marchal:2017a; @Marchal:2017b; @Marchal:2019].
+Each year, predicts ignitions and escapes from the models fitted by *fireSense_ignitionFit* and *fireSense_EscapeFit*, for the ignition component of fireSense [@Marchal:2017a; @Marchal:2017b; @Marchal:2019].
 
 1. The covariates in `fireSense_igAndEscapePred_Covariates` are rescaled with `fireSenseUtils::prepareCovariatesOuter()`, the function used for fitting (`rescaleVars`, `modelAlgorithm`).
 2. Expected ignitions per coarse pixel are the mean of the predictions of the per-fold ignition models; the number of ignitions is drawn from a Poisson.
@@ -59,21 +59,21 @@ Only `xgboost` models are supported.
 `ignitionFitRTM` (the coarse raster used for fitting, from *fireSense_dataPrepFit*) is also read from the `simList`, though it is not declared as an input.
 `modelAlgorithm` and `rescaleVars` must have the same value in every module that defines them.
 
-Table \@ref(tab:moduleInputs-fireSense-IgnitionPredict) shows the full list of module inputs.
+Table \@ref(tab:moduleInputs-fireSense-ignitionPredict) shows the full list of module inputs.
 
-```{r moduleInputs-fireSense-IgnitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_inputs <- SpaDES.core::moduleInputs("fireSense_IgnitionPredict", "..")
+```{r moduleInputs-fireSense-ignitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("fireSense_ignitionPredict", "..")
 knitr::kable(df_inputs,
-             caption = "List of (ref:fireSense-IgnitionPredict) input objects and their description.") |>
+             caption = "List of (ref:fireSense-ignitionPredict) input objects and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
 
-Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-IgnitionPredict))
+Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignitionPredict))
 
 
-```{r moduleParams-fireSense-IgnitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_params <- SpaDES.core::moduleParams("fireSense_IgnitionPredict", "..")
-knitr::kable(df_params, caption = "List of (ref:fireSense-IgnitionPredict) parameters and their description.") |>
+```{r moduleParams-fireSense-ignitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("fireSense_ignitionPredict", "..")
+knitr::kable(df_params, caption = "List of (ref:fireSense-ignitionPredict) parameters and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
 
@@ -89,11 +89,11 @@ If `.saveInterval` is not `NA`, the ignition probability raster is plotted each 
 
 ### Module outputs
 
-Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-IgnitionPredict)).
+Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-ignitionPredict)).
 
-```{r moduleOutputs-fireSense-IgnitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_outputs <- SpaDES.core::moduleOutputs("fireSense_IgnitionPredict", "..")
-knitr::kable(df_outputs, caption = "List of (ref:fireSense-IgnitionPredict) outputs and their description.") |>
+```{r moduleOutputs-fireSense-ignitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("fireSense_ignitionPredict", "..")
+knitr::kable(df_outputs, caption = "List of (ref:fireSense-ignitionPredict) outputs and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
 
@@ -104,7 +104,7 @@ It is normally run as part of the [fireSense](https://github.com/PredictiveEcolo
 
 ### Getting help
 
-- <https://github.com/PredictiveEcology/fireSense_IgnitionPredict/issues>
+- <https://github.com/PredictiveEcology/fireSense_ignitionPredict/issues>
 
 ## References
 

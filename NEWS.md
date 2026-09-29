@@ -1,4 +1,6 @@
-# fireSense_IgnitionPredict (development version)
+# fireSense_ignitionPredict 1.1.0
+
+- Renamed from `fireSense_IgnitionPredict` to `fireSense_ignitionPredict` (module naming convention `<model>_<camelCaseComponent>`); projects must rename the module and its `params` key. The class `fireSense_IgnitionFit` and the objects `fireSense_IgnitionFitted`, `fireSense_IgnitionFittedList` and `fireSense_IgnitionPredicted` keep their names. Version 1.1.0.
 
 - `ignitionsAndEscapes` gains `escaped`: whether each ignition escaped, with exactly `escapes` of a coarse
   pixel's ignitions TRUE. `escapes` is the coarse pixel's count, repeated on each of its ignitions, and fireSense

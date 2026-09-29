@@ -2,5 +2,5 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
-  fireSense_IgnitionPredict: fireSense_IgnitionPredict.html
-last_built: 2026-09-25T02:14Z
+  fireSense_ignitionPredict: fireSense_ignitionPredict.html
+last_built: 2026-09-29T19:07Z

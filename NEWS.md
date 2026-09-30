@@ -1,3 +1,7 @@
+# fireSense_ignitionPredict 1.1.1
+
+- reqdPkgs now lists `data.table` and `reproducible`, which the module calls (`:=`, `copy`, `set`, `setnames`, `rbindlist`, `as.data.table`, `postProcess`) but did not list. Version 1.1.1.
+
 # fireSense_ignitionPredict 1.1.0
 
 - Renamed from `fireSense_IgnitionPredict` to `fireSense_ignitionPredict` (module naming convention `<model>_<camelCaseComponent>`); projects must rename the module and its `params` key. The class `fireSense_IgnitionFit` and the objects `fireSense_IgnitionFitted`, `fireSense_IgnitionFittedList` and `fireSense_IgnitionPredicted` keep their names. Version 1.1.0.

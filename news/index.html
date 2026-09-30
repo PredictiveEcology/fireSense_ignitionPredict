@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_ignitionPredict</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.1</span>
       </span>
     </div>
 
@@ -51,6 +51,10 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.1.1" id="firesense_ignitionpredict-111">fireSense_ignitionPredict 1.1.1<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-111"></a></h2>
+<ul><li>reqdPkgs now lists <code>data.table</code> and <code>reproducible</code>, which the module calls (<code>:=</code>, <code>copy</code>, <code>set</code>, <code>setnames</code>, <code>rbindlist</code>, <code>as.data.table</code>, <code>postProcess</code>) but did not list. Version 1.1.1.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.1.0" id="firesense_ignitionpredict-110">fireSense_ignitionPredict 1.1.0<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-110"></a></h2>
 <ul><li><p>Renamed from <code>fireSense_IgnitionPredict</code> to <code>fireSense_ignitionPredict</code> (module naming convention <code>&lt;model&gt;_&lt;camelCaseComponent&gt;</code>); projects must rename the module and its <code>params</code> key. The class <code>fireSense_IgnitionFit</code> and the objects <code>fireSense_IgnitionFitted</code>, <code>fireSense_IgnitionFittedList</code> and <code>fireSense_IgnitionPredicted</code> keep their names. Version 1.1.0.</p></li>

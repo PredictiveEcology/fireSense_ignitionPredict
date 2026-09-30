@@ -11,13 +11,14 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(SpaDES.core = "0.1.0", fireSense_ignitionPredict = "1.1.0"),
+  version = list(SpaDES.core = "0.1.0", fireSense_ignitionPredict = "1.1.1"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSense_ignitionPredict.Rmd"),
   reqdPkgs = list(
-    "magrittr", "terra",
+    "data.table", "magrittr", "terra",
+    "PredictiveEcology/reproducible@development",
     "PredictiveEcology/fireSenseUtils@development (>=0.1.0)"
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),

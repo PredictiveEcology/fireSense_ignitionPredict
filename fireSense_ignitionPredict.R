@@ -184,15 +184,10 @@ IgnitionPredictRun <- function(sim) {
 
   # disaggregate the coarse raster to size of flammableRTM
   # draw ignitions/escapes from smaller pixel size
-  igRas <- rast(sim$ignitionFitRTM)
-  igRas[igCov$pixelID] <- igCov$pixelID
+  # The fine-to-coarse cell mapping does not change within a run, so it is computed once (in mod$).
+  igRasDT <- fineCoarseTable(coarseToFineMap(sim$ignitionFitRTM, sim$flammableRTM, store = mod),
+                             sim$flammableRTM)
 
-  # can't use disagg because it may not be round pixels
-  igRas <- postProcess(igRas, to = sim$flammableRTM, method = "near")
-  igRas[sim$flammableRTM[] != 1] <- NA
-
-  igRasDT <- as.data.table(igRas, cells = TRUE)
-  setnames(igRasDT, new = c("pixelID", "chunkyPixels"))
   # nomatch = NULL --> removes pixels that aren't in igCov, which are non flammable
   igs <- igRasDT[igCov, on = c("chunkyPixels" = "pixelID"), nomatch = NULL]
   # randomly sample
@@ -308,4 +303,41 @@ foldMeanPrediction <- function(fit, newdata, clamp01 = FALSE) {
     if (clamp01) pmax(pmin(1, p), 0) else p
   })
   rowMeans(do.call(cbind, preds))
+}
+
+#' Which coarse cell each fine cell falls in
+#'
+#' Regridding the coarse ignition raster onto `flammableRTM` ("near", because the cells may not be
+#' round multiples) took about 3 s a year at 6.7M cells, and the mapping never changes within a run.
+#' It is computed once, from the coarse cell numbers, and kept in `store`; it is rebuilt if the extent,
+#' dimensions or crs of either raster change.
+#'
+#' @param coarse,fine `SpatRaster`s: `ignitionFitRTM` and `flammableRTM`.
+#' @param store An environment to keep the mapping in (the module's `mod`).
+#'
+#' @return A vector with one element per fine cell: its coarse cell number, `NA` outside the coarse raster.
+coarseToFineMap <- function(coarse, fine, store) {
+  gridKey <- function(r) list(as.vector(terra::ext(r)), dim(r), terra::crs(r))
+  key <- list(gridKey(coarse), gridKey(fine))
+  if (!is.null(store$coarseToFine) && identical(store$coarseToFine$key, key))
+    return(store$coarseToFine$map)
+
+  coarseIds <- rast(coarse)
+  coarseIds[] <- seq_len(ncell(coarseIds))
+  coarseIds <- postProcess(coarseIds, to = fine, method = "near")
+  map <- as.vector(terra::values(coarseIds, mat = FALSE))
+  store$coarseToFine <- list(key = key, map = map)
+  map
+}
+
+#' The fine cells and their coarse cells, for one year
+#'
+#' @param map The result of `coarseToFineMap()`.
+#' @param fine `flammableRTM`: cells not equal to 1 are left out.
+#'
+#' @return A `data.table` with `pixelID` (fine cell) and `chunkyPixels` (coarse cell).
+fineCoarseTable <- function(map, fine) {
+  flam <- fine[]
+  keep <- which(!is.na(map) & !(!is.na(flam) & flam != 1))
+  data.table(pixelID = keep, chunkyPixels = map[keep])
 }

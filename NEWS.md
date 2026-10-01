@@ -1,3 +1,7 @@
+# fireSense_ignitionPredict (development version)
+
+- The coarse-to-fine cell mapping of the ignition raster is computed once and kept in `mod`, then applied each year by indexing, instead of regridding the raster to `flammableRTM` with `postProcess()` every year (about 3 s a year at 6.7M fine cells). It is rebuilt if the extent, dimensions or crs of `ignitionFitRTM` or `flammableRTM` change. Ignitions and escapes are unchanged.
+
 # fireSense_ignitionPredict 1.1.1
 
 - reqdPkgs now lists `data.table` and `reproducible`, which the module calls (`:=`, `copy`, `set`, `setnames`, `rbindlist`, `as.data.table`, `postProcess`) but did not list. Version 1.1.1.

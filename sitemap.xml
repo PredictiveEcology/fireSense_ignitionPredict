@@ -9,8 +9,10 @@
 <url><loc>/index.html</loc></url>
 <url><loc>/news/index.html</loc></url>
 <url><loc>/reference/IgnitionPredictRun.html</loc></url>
+<url><loc>/reference/coarseToFineMap.html</loc></url>
 <url><loc>/reference/doEvent.fireSense_ignitionPredict.html</loc></url>
 <url><loc>/reference/dot-inputObjects.html</loc></url>
+<url><loc>/reference/fineCoarseTable.html</loc></url>
 <url><loc>/reference/ignitionFitsByELF.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 </urlset>

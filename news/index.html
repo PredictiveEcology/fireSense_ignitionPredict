@@ -52,6 +52,10 @@
     </div>
 
     <div class="section level2">
+<h2 class="page-header" data-toc-text="development version" id="firesense_ignitionpredict-development-version">fireSense_ignitionPredict (development version)<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-development-version"></a></h2>
+<ul><li>The coarse-to-fine cell mapping of the ignition raster is computed once and kept in <code>mod</code>, then applied each year by indexing, instead of regridding the raster to <code>flammableRTM</code> with <code>postProcess()</code> every year (about 3 s a year at 6.7M fine cells). It is rebuilt if the extent, dimensions or crs of <code>ignitionFitRTM</code> or <code>flammableRTM</code> change. Ignitions and escapes are unchanged.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="page-header" data-toc-text="1.1.1" id="firesense_ignitionpredict-111">fireSense_ignitionPredict 1.1.1<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-111"></a></h2>
 <ul><li>reqdPkgs now lists <code>data.table</code> and <code>reproducible</code>, which the module calls (<code>:=</code>, <code>copy</code>, <code>set</code>, <code>setnames</code>, <code>rbindlist</code>, <code>as.data.table</code>, <code>postProcess</code>) but did not list. Version 1.1.1.</li>
 </ul></div>
@@ -63,7 +67,7 @@
 <li><p>Several fitted ELFs in one study area: with <code>fireSense_IgnitionFittedList</code> and <code>fireSense_EscapeFittedList</code> (one fit per ELF, named by <code>ELFind</code>) and <code>rasterToMatchLargeELF</code>, each ELF’s models predict the coarse pixels of that ELF, with its own <code>scaleData</code>. The Poisson and binomial draws are still made once over all pixels, so one ELF gives exactly the previous result.</p></li>
 </ul></div>
     <div class="section level2">
-<h2 class="page-header" data-toc-text="development version" id="firesense_ignitionpredict-development-version">fireSense_IgnitionPredict (development version)<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-development-version"></a></h2>
+<h2 class="page-header" data-toc-text="development version" id="firesense_ignitionpredict-development-version-1">fireSense_IgnitionPredict (development version)<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-development-version-1"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
 <ul><li>Covariates are now standardized with the center and scale stored by the fit (<code>fireSense_IgnitionFitted$scaleData</code>, <code>fireSense_EscapeFitted$scaleData</code>). They were standardized with each year’s own mean and sd, so every year looked average to the models. With <code>rescaleVars = TRUE</code>, a fitted object without <code>scaleData</code> is now an error.</li>

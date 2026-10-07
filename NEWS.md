@@ -1,3 +1,5 @@
+# fireSense_ignitionPredict (development version)
+
 # fireSense_ignitionPredict 1.2.0
 
 This release fixes two errors that changed how many fires the module predicted. Weather and landscape conditions are now compared against the conditions the model was fitted on; before, each year was compared only with itself, so every year looked average to the model and hot or dry years did not stand out. And when several fires started in the same area, the module could count more escaped fires than actually escaped; each escape is now counted once. Results will differ from earlier versions, and should be more realistic.

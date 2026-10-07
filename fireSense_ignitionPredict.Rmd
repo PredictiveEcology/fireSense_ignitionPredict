@@ -1,0 +1,111 @@
+---
+title: "fireSense_ignitionPredict Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'fireSense_ignitionPredict', path = '..')$version`"
+date: "Last updated: `r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+bibliography: citations/references_fireSense_ignitionPredict.bib
+link-citations: true
+always_allow_html: true
+---
+
+# fireSense_ignitionPredict Module
+
+<!-- the following are text references used in captions for LaTeX compatibility -->
+(ref:fireSense-ignitionPredict) *fireSense_ignitionPredict*
+
+```{r setup-fireSense-ignitionPredict, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
+
+dir.create("figures", showWarnings = FALSE)
+
+download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
+              destfile = "figures/markdownBadge.png",
+              mode = "wb")
+```
+
+[![made-with-Markdown](figures/markdownBadge.png)](https://commonmark.org)
+
+<!-- if knitting to pdf remember to add the pandoc_args: ["--extract-media", "."] option to yml in order to get the badge images -->
+
+#### Authors:
+
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "fireSense_ignitionPredict", path = '..')$authors), sep = ', ')`
+<!-- ideally separate authors with new lines, '\n' not working -->
+
+## Module Overview
+
+### Module summary
+
+Each year, predicts ignitions and escapes from the models fitted by *fireSense_ignitionFit* and *fireSense_EscapeFit*, for the ignition component of fireSense [@Marchal:2017a; @Marchal:2017b; @Marchal:2019].
+
+1. The covariates in `fireSense_igAndEscapePred_Covariates` are rescaled with `fireSenseUtils::prepareCovariatesOuter()`, the function used for fitting (`rescaleVars`, `modelAlgorithm`).
+2. Expected ignitions per coarse pixel are the mean of the predictions of the per-fold ignition models; the number of ignitions is drawn from a Poisson.
+3. For coarse pixels with ignitions, the escape probability is the mean of the per-fold escape models, clamped to [0, 1]; escapes are drawn from a binomial with size = ignitions.
+4. Each ignition is placed in a randomly chosen flammable pixel of `flammableRTM` inside its coarse pixel.
+
+Only `xgboost` models are supported.
+
+### Module inputs and parameters
+
+`ignitionFitRTM` (the coarse raster used for fitting, from *fireSense_dataPrepFit*) is also read from the `simList`, though it is not declared as an input.
+`modelAlgorithm` and `rescaleVars` must have the same value in every module that defines them.
+
+Table \@ref(tab:moduleInputs-fireSense-ignitionPredict) shows the full list of module inputs.
+
+```{r moduleInputs-fireSense-ignitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("fireSense_ignitionPredict", "..")
+knitr::kable(df_inputs,
+             caption = "List of (ref:fireSense-ignitionPredict) input objects and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignitionPredict))
+
+
+```{r moduleParams-fireSense-ignitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("fireSense_ignitionPredict", "..")
+knitr::kable(df_params, caption = "List of (ref:fireSense-ignitionPredict) parameters and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Events
+
+- `init`: schedules `run` at `.runInitialTime`, and `save` at `.saveInitialTime` if that is not `NA`.
+- `run`: makes the predictions and draws described above; repeats every `.runInterval`.
+- `save`: does nothing but say so. To save the predicted raster, name `fireSense_IgAndEscapeProbRas` in `outputs(sim)`.
+
+### Plotting
+
+If `.saveInterval` is not `NA`, the ignition probability raster is plotted each year with `Plots()`.
+
+### Module outputs
+
+Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-ignitionPredict)).
+
+```{r moduleOutputs-fireSense-ignitionPredict, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("fireSense_ignitionPredict", "..")
+knitr::kable(df_outputs, caption = "List of (ref:fireSense-ignitionPredict) outputs and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Links to other modules
+
+Runs after *fireSense_dataPrepPredict*, which supplies the covariates. `ignitionsAndEscapes` is used by *fireSense* to start fires.
+It is normally run as part of the [fireSense](https://github.com/PredictiveEcology/fireSense) module group.
+
+### Getting help
+
+- <https://github.com/PredictiveEcology/fireSense_ignitionPredict/issues>
+
+## References
+
+<!-- autogenerated from bibligraphy -->

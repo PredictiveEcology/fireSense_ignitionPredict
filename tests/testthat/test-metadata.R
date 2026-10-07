@@ -18,9 +18,12 @@ test_that("inputs are the expected names and classes", {
   expect_identical(
     inputs[order(names(inputs))],
     c(fireSense_EscapeFitted               = "fireSense_EscapeFit",
+      fireSense_EscapeFittedList           = "list",
       fireSense_igAndEscapePred_Covariates = "data.table",
       fireSense_IgnitionFitted             = "fireSense_IgnitionFit",
-      flammableRTM                         = "SpatRaster")
+      fireSense_IgnitionFittedList         = "list",
+      flammableRTM                         = "SpatRaster",
+      rasterToMatchLargeELF                = "SpatRaster")
   )
 })
 
@@ -34,11 +37,31 @@ test_that("outputs are the expected names and classes", {
   )
 })
 
-test_that("parameters are the expected names", {
-  md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
-  expect_identical(
-    sort(md$parameters$paramName),
-    sort(c(".runInitialTime", ".runInterval", ".saveInitialTime", ".saveInterval",
-           ".useCache", "modelAlgorithm", "rescaleVars"))
+## deparsed defaults, so that a changed default fails as loudly as a renamed parameter
+paramTable <- function(md) {
+  p <- md$parameters
+  out <- data.frame(
+    class = as.character(unlist(p$paramClass)),
+    default = vapply(p$default, function(d) paste(deparse(as.vector(d)), collapse = ""), ""),
+    row.names = p$paramName
   )
+  out[order(rownames(out), method = "radix"), ] # C order, whatever the locale
+}
+
+test_that("parameters have the expected names, classes and defaults", {
+  md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
+  expected <- data.frame(
+    class   = c("numeric", "numeric", "numeric", "numeric", "character", "logical", "character", "logical"),
+    ## .runInitialTime defaults to start(sim), which is 0 when only metadata is parsed
+    default = c("0", "1", "NA", "NA", "NA", "FALSE", "\"xgboost\"", "TRUE"),
+    row.names = c(".runInitialTime", ".runInterval", ".saveInitialTime", ".saveInterval", ".studyAreaName", ".useCache",
+                  "modelAlgorithm", "rescaleVars")
+  )
+  expect_identical(paramTable(md), expected)
+})
+
+test_that("fireSenseUtils is a declared dependency, so CI installs it", {
+  md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
+  expect_true(any(grepl("^PredictiveEcology/fireSenseUtils@development", unlist(md$reqdPkgs))))
+  expect_identical(md$timeunit, "year")
 })

@@ -5,5 +5,5 @@
 .DS_Store
 .quarto
 
-fireSense_IgnitionPredict_cache/
-fireSense_IgnitionPredict2.Rmd
+fireSense_ignitionPredict_cache/
+fireSense_ignitionPredict2.Rmd

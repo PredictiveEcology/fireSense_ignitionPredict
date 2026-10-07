@@ -11,7 +11,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(SpaDES.core = "0.1.0", fireSense_ignitionPredict = "1.1.1"),
+  version = list(SpaDES.core = "0.1.0", fireSense_ignitionPredict = "1.2.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),

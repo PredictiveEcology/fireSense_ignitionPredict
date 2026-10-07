@@ -164,7 +164,7 @@ IgnitionPredictRun <- function(sim) {
     if (rescaleVars) covsHere <- scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted")
     predsIgns[f$rows] <- foldMeanPrediction(f$ign, covsHere)
   }
-  igns <- rpois(NROW(predsIgns), lambda = predsIgns) # can't use rtweedie because don't know the dispersion parameter
+  igns <- rpois(NROW(predsIgns), lambda = predsIgns) # the ignition model is Poisson (count:poisson), so its prediction is the Poisson mean
 
   whHasIgns <- which(igns > 0)
   predsEscs <- rep(NA_real_, NROW(igCov))
@@ -172,7 +172,7 @@ IgnitionPredictRun <- function(sim) {
     rowsEsc <- intersect(whHasIgns, f$rows)
     covsHere <- igCov[rowsEsc]
     if (rescaleVars) covsHere <- scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted")
-    # the escape model is tweedie, so can go above 1, below 0 rarely
+    # the escape model is Poisson (count:poisson), so its mean can go above 1, never below 0
     predsEscs[rowsEsc] <- foldMeanPrediction(f$esc, covsHere, clamp01 = TRUE)
   }
   predsEscs <- predsEscs[whHasIgns]

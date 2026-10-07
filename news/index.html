@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_ignitionPredict</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0</span>
       </span>
     </div>
 
@@ -52,7 +52,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="development version" id="firesense_ignitionpredict-development-version">fireSense_ignitionPredict (development version)<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-development-version"></a></h2>
+<h2 class="page-header" data-toc-text="1.2.0" id="firesense_ignitionpredict-120">fireSense_ignitionPredict 1.2.0<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-120"></a></h2>
+<p>This release fixes two errors that changed how many fires the module predicted. Weather and landscape conditions are now compared against the conditions the model was fitted on; before, each year was compared only with itself, so every year looked average to the model and hot or dry years did not stand out. And when several fires started in the same area, the module could count more escaped fires than actually escaped; each escape is now counted once. Results will differ from earlier versions, and should be more realistic.</p>
+<p>The module also has a new name, <code>fireSense_ignitionPredict</code> (lower-case “i”), so projects need to update the name they use for it. It can now use a separate fitted model for each region (ELF) of a study area, runs faster on large maps, and has automated tests and a documentation website.</p>
 <ul><li>The coarse-to-fine cell mapping of the ignition raster is computed once and kept in <code>mod</code>, then applied each year by indexing, instead of regridding the raster to <code>flammableRTM</code> with <code>postProcess()</code> every year (about 3 s a year at 6.7M fine cells). It is rebuilt if the extent, dimensions or crs of <code>ignitionFitRTM</code> or <code>flammableRTM</code> change. Ignitions and escapes are unchanged.</li>
 </ul></div>
     <div class="section level2">
@@ -67,7 +69,7 @@
 <li><p>Several fitted ELFs in one study area: with <code>fireSense_IgnitionFittedList</code> and <code>fireSense_EscapeFittedList</code> (one fit per ELF, named by <code>ELFind</code>) and <code>rasterToMatchLargeELF</code>, each ELF’s models predict the coarse pixels of that ELF, with its own <code>scaleData</code>. The Poisson and binomial draws are still made once over all pixels, so one ELF gives exactly the previous result.</p></li>
 </ul></div>
     <div class="section level2">
-<h2 class="page-header" data-toc-text="development version" id="firesense_ignitionpredict-development-version-1">fireSense_IgnitionPredict (development version)<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-development-version-1"></a></h2>
+<h2 class="page-header" data-toc-text="development version" id="firesense_ignitionpredict-development-version">fireSense_IgnitionPredict (development version)<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-development-version"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
 <ul><li>Covariates are now standardized with the center and scale stored by the fit (<code>fireSense_IgnitionFitted$scaleData</code>, <code>fireSense_EscapeFitted$scaleData</code>). They were standardized with each year’s own mean and sd, so every year looked average to the models. With <code>rescaleVars = TRUE</code>, a fitted object without <code>scaleData</code> is now an error.</li>

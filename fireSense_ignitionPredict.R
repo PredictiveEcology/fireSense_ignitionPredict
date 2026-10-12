@@ -193,17 +193,7 @@ IgnitionPredictRun <- function(sim) {
   # randomly sample
   # use unique because of multiple pixelID per chunkyPixel
   drawTable <- unique(igs[ignitions > 0, .(chunkyPixels, ignitions, escapes)])
-  pixelID_igs <- lapply(drawTable$chunkyPixels,
-                        FUN = function(n, draw = drawTable, ig = igs) {
-                          sampledChunk <- draw[chunkyPixels == n]
-                          pixelID_pop <- igs[chunkyPixels == sampledChunk$chunkyPixels]
-                          drawn <- sample(pixelID_pop$pixelID, size = sampledChunk$ignitions)
-                          igPixels <- try(ig[pixelID %in% drawn, .(pixelID, igProb, ignitions, escapeProb, escapes,
-                                                                   chunkyPixels)])
-                          return(igPixels)
-                        }
-  ) |>
-    rbindlist() #will this fail with zero ignitions?
+  pixelID_igs <- placeIgnitions(igs, drawTable)
 
   #for posterior analysis
   igProbRas <- rast(sim$ignitionFitRTM)
@@ -340,4 +330,36 @@ fineCoarseTable <- function(map, fine) {
   flam <- fine[]
   keep <- which(!is.na(map) & !(!is.na(flam) & flam != 1))
   data.table(pixelID = keep, chunkyPixels = map[keep])
+}
+
+#' Place each coarse pixel's ignitions on its fine pixels
+#'
+#' For each row of `drawTable`, draws `ignitions` of the fine pixels of that coarse pixel and returns
+#' their rows of `igs`, in `igs` row order. One `split()` of the candidate rows and a pixelID-to-row
+#' lookup replace a scan of all of `igs` for every ignited coarse pixel.
+#'
+#' The `sample()` calls are made in `drawTable` order, on the candidate `pixelID`s in `igs` order. This
+#' includes the `sample(x, size)` behaviour for a single candidate `x`, which draws from `1:x`; the
+#' pixels with those IDs are then returned, wherever they are. That quirk is kept so results do not change.
+#'
+#' @param igs `data.table` of fine pixels with `pixelID`, `igProb`, `ignitions`, `escapeProb`, `escapes`
+#'   and `chunkyPixels` (the coarse pixel).
+#' @param drawTable `data.table` with one row per ignited coarse pixel: `chunkyPixels`, `ignitions`.
+#'
+#' @return A `data.table` with the `igs` columns `pixelID`, `igProb`, `ignitions`, `escapeProb`,
+#'   `escapes`, `chunkyPixels`, for the drawn pixels.
+placeIgnitions <- function(igs, drawTable) {
+  sel <- which(igs$chunkyPixels %in% drawTable$chunkyPixels)
+  rowsByChunk <- split(sel, igs$chunkyPixels[sel])
+  rowOfPixel <- integer(max(igs$pixelID, 0L))
+  rowOfPixel[igs$pixelID] <- seq_len(nrow(igs))
+  cols <- c("pixelID", "igProb", "ignitions", "escapeProb", "escapes", "chunkyPixels")
+  out <- vector("list", nrow(drawTable))
+  for (i in seq_len(nrow(drawTable))) {
+    rows <- rowsByChunk[[as.character(drawTable$chunkyPixels[i])]]
+    drawn <- sample(igs$pixelID[rows], size = drawTable$ignitions[i])
+    hit <- rowOfPixel[drawn[drawn >= 1 & drawn <= length(rowOfPixel)]]
+    out[[i]] <- igs[sort(hit[hit > 0]), ..cols]
+  }
+  rbindlist(out)
 }

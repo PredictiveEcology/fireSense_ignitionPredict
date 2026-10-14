@@ -18,6 +18,7 @@ defineModule(sim, list(
   documentation = list("README.txt", "fireSense_ignitionPredict.Rmd"),
   reqdPkgs = list(
     "data.table", "magrittr", "terra",
+    "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
     "PredictiveEcology/fireSenseUtils@development (>=0.1.0)"
   ),

@@ -53,7 +53,9 @@
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="development version" id="firesense_ignitionpredict-development-version">fireSense_ignitionPredict (development version)<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-development-version"></a></h2>
-<ul><li>Ignitions are placed on fine pixels with one <code><a href="https://rdrr.io/r/base/split.html" class="external-link">split()</a></code> of the candidate pixels and a pixelID-to-row lookup, instead of two scans of the whole fine-pixel table for every ignited coarse pixel (about 3 s a year at 1.3M flammable fine pixels). The same draws are made in the same order, so ignitions, escapes and the random number stream are unchanged.</li>
+<ul><li>
+<code>SpaDES.core</code> is now in <code>reqdPkgs</code> (<code>scheduleEvent()</code>, <code>P()</code>, <code>Plots()</code> are used).</li>
+<li>Ignitions are placed on fine pixels with one <code><a href="https://rdrr.io/r/base/split.html" class="external-link">split()</a></code> of the candidate pixels and a pixelID-to-row lookup, instead of two scans of the whole fine-pixel table for every ignited coarse pixel (about 3 s a year at 1.3M flammable fine pixels). The same draws are made in the same order, so ignitions, escapes and the random number stream are unchanged.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.2.0" id="firesense_ignitionpredict-120">fireSense_ignitionPredict 1.2.0<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-120"></a></h2>

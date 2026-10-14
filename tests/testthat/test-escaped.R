@@ -19,6 +19,18 @@ test_that("exactly `escapes` of each coarse pixel's ignitions escaped", {
   }
 })
 
+test_that("a year with no ignitions gives a 0-row table with the columns and types of a normal year", {
+  normal <- toyIgRun(twoFolds(list(constant(0.5))), seed = 42)$ignitionsAndEscapes
+  none <- toyIgRun(toyIgInputs(list(byPixel(c(0, 0, 0, 0)), byPixel(c(0, 0, 0, 0))), list(constant(0.5))),
+                   seed = 42)$ignitionsAndEscapes
+  expect_identical(nrow(none), 0L)
+  expect_true(all(c("pixelID", "escaped") %in% names(none)))
+  expect_identical(names(none), names(normal))
+  expect_identical(vapply(none, typeof, ""), vapply(normal, typeof, ""))
+  expect_identical(none$pixelID, integer(0))
+  expect_identical(none$escaped, logical(0))
+})
+
 test_that("every ignition escapes with probability 1, none with probability 0", {
   ig1 <- igTable(toyIgRun(twoFolds(list(constant(1)))))
   ig0 <- igTable(toyIgRun(twoFolds(list(constant(0)))))

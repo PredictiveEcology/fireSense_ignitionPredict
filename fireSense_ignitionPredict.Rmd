@@ -45,12 +45,12 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 
 ### Module summary
 
-Each year, predicts ignitions and escapes from the models fitted by *fireSense_ignitionFit* and *fireSense_EscapeFit*, for the ignition component of fireSense [@Marchal:2017a; @Marchal:2017b; @Marchal:2019].
+Each year, predicts the expected number of ignitions and of escapes from the models fitted by *fireSense_ignitionFit* and *fireSense_EscapeFit*, for the ignition component of fireSense [@Marchal:2017a; @Marchal:2017b; @Marchal:2019].
 
 1. The covariates in `fireSense_igAndEscapePred_Covariates` are rescaled with `fireSenseUtils::prepareCovariatesOuter()`, the function used for fitting (`rescaleVars`, `modelAlgorithm`).
-2. Expected ignitions per coarse pixel are the mean of the predictions of the per-fold ignition models; the number of ignitions is drawn from a Poisson.
-3. For coarse pixels with ignitions, the escape probability is the mean of the per-fold escape models, clamped to [0, 1]; escapes are drawn from a binomial with size = ignitions.
-4. Each ignition is placed in a randomly chosen flammable pixel of `flammableRTM` inside its coarse pixel.
+2. Expected ignitions per coarse pixel are the mean of the predictions of the per-fold ignition models.
+3. Expected escapes per coarse pixel (given an ignition) are the mean of the per-fold escape models, for every pixel. Predictions below 0 are made 0.
+4. The objective the models were fitted with is passed on in `fireSense_IgAndEscapeDistribution`. Nothing is drawn here: *fireSense_burn* draws the ignitions and escapes, places them and spreads the fires.
 
 Only `xgboost` models are supported.
 
@@ -80,12 +80,12 @@ knitr::kable(df_params, caption = "List of (ref:fireSense-ignitionPredict) param
 ### Events
 
 - `init`: schedules `run` at `.runInitialTime`, and `save` at `.saveInitialTime` if that is not `NA`.
-- `run`: makes the predictions and draws described above; repeats every `.runInterval`.
+- `run`: makes the predictions described above; repeats every `.runInterval`.
 - `save`: does nothing but say so. To save the predicted raster, name `fireSense_IgAndEscapeProbRas` in `outputs(sim)`.
 
 ### Plotting
 
-If `.saveInterval` is not `NA`, the ignition probability raster is plotted each year with `Plots()`.
+If `.saveInterval` is not `NA`, the expected-ignitions raster is plotted each year with `Plots()`.
 
 ### Module outputs
 
@@ -99,7 +99,7 @@ knitr::kable(df_outputs, caption = "List of (ref:fireSense-ignitionPredict) outp
 
 ### Links to other modules
 
-Runs after *fireSense_dataPrepPredict*, which supplies the covariates. `ignitionsAndEscapes` is used by *fireSense* to start fires.
+Runs after *fireSense_dataPrepPredict*, which supplies the covariates. `fireSense_IgAndEscapeProbRas` and `fireSense_IgAndEscapeDistribution` are used by *fireSense_burn*, which draws the ignitions and escapes and starts the fires.
 It is normally run as part of the [fireSense](https://github.com/PredictiveEcology/fireSense) module group.
 
 ### Getting help

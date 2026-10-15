@@ -22,7 +22,6 @@ test_that("inputs are the expected names and classes", {
       fireSense_igAndEscapePred_Covariates = "data.table",
       fireSense_IgnitionFitted             = "fireSense_IgnitionFit",
       fireSense_IgnitionFittedList         = "list",
-      flammableRTM                         = "SpatRaster",
       rasterToMatchLargeELF                = "SpatRaster")
   )
 })
@@ -32,8 +31,8 @@ test_that("outputs are the expected names and classes", {
   outputs <- stats::setNames(md$outputObjects$objectClass, md$outputObjects$objectName)
   expect_identical(
     outputs[order(names(outputs))],
-    c(fireSense_IgAndEscapeProbRas = "SpatRaster",
-      ignitionsAndEscapes          = "data.table")
+    c(fireSense_IgAndEscapeDistribution = "list",
+      fireSense_IgAndEscapeProbRas      = "SpatRaster")
   )
 })
 

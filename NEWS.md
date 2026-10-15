@@ -2,6 +2,7 @@
 
 - A year with no ignitions now gives a 0-row `ignitionsAndEscapes` with the same columns and types (`pixelID`, `igProb`, `ignitions`, `escapeProb`, `escapes`, `escaped`) as any other year. Before, it had no columns, so code reading `$pixelID` got `NULL` (`fireSenseUtils::hindcastSimulated()` failed). Years with ignitions are unchanged.
 
+- `SpaDES.core` is now in `reqdPkgs` (`scheduleEvent()`, `P()`, `Plots()` are used).
 - Ignitions are placed on fine pixels with one `split()` of the candidate pixels and a pixelID-to-row lookup, instead of two scans of the whole fine-pixel table for every ignited coarse pixel (about 3 s a year at 1.3M flammable fine pixels). The same draws are made in the same order, so ignitions, escapes and the random number stream are unchanged.
 
 # fireSense_ignitionPredict 1.2.0

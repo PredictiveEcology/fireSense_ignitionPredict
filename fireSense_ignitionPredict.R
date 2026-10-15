@@ -213,9 +213,11 @@ IgnitionPredictRun <- function(sim) {
   ## is placed, so the placements do not change.
   if (NROW(pixelID_igs)) {
     pixelID_igs[, escaped := seq_len(.N) %in% sample.int(.N, min(escapes[1], .N)), by = "chunkyPixels"]
-    set(pixelID_igs, NULL, "chunkyPixels", NULL)
+  } else {
+    set(pixelID_igs, NULL, "escaped", logical(0))
   }
-  randomOrder <- sample(1:nrow(pixelID_igs))
+  set(pixelID_igs, NULL, "chunkyPixels", NULL)
+  randomOrder <- sample.int(nrow(pixelID_igs)) # sample(1:0) would give 2 rows
   sim$ignitionsAndEscapes <- pixelID_igs[randomOrder,] #Randomize order
 
   return(invisible(sim))
@@ -362,5 +364,7 @@ placeIgnitions <- function(igs, drawTable) {
     hit <- rowOfPixel[drawn[drawn >= 1 & drawn <= length(rowOfPixel)]]
     out[[i]] <- igs[sort(hit[hit > 0]), ..cols]
   }
+  ## no ignited coarse pixel: rbindlist(list()) has no columns, so keep the schema of a normal year
+  if (!length(out)) return(igs[integer(0), ..cols])
   rbindlist(out)
 }

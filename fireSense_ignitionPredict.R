@@ -1,8 +1,8 @@
 defineModule(sim, list(
   name = "fireSense_ignitionPredict",
   description = paste(
-    "Predicts annual ignition and escape probabilities from the models fitted by",
-    "fireSense_ignitionFit and fireSense_EscapeFit, and draws the pixels that ignite and escape."),
+    "Predicts the expected number of ignitions and of escapes per coarse pixel and year from the models fitted by",
+    "fireSense_ignitionFit and fireSense_EscapeFit. It draws nothing: fireSense_burn draws the ignitions and escapes."),
   keywords = c("fire frequency", "additive property", "poisson", "negative binomial", "fireSense"),
   authors = c(
     person("Eliot", "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = c("aut", "cre")),
@@ -75,21 +75,18 @@ defineModule(sim, list(
                    "`pixelID` is the cell index of `ignitionFitRTM`."
                  )
     ),
-    expectsInput("flammableRTM", "SpatRaster",
-                 sourceURL = NA,
-                 desc = "Binary raster, 1 where the pixel is flammable."
-    ),
   ),
   outputObjects = bindrows(
     createsOutput("fireSense_IgAndEscapeProbRas", "SpatRaster",
-                  desc = paste("Two layers, `ignitionProb` (expected ignitions per pixel) and `escapeProb`,",
-                               "at the resolution of `ignitionFitRTM`.")
+                  desc = paste("Two layers at the resolution of `ignitionFitRTM`, for every pixel with covariates:",
+                               "`ignitionProb`, the expected number of ignitions per pixel and year, and `escapeProb`,",
+                               "the expected number of escapes per pixel and year, given at least one ignition.",
+                               "Both are means of the fitted distributions in `fireSense_IgAndEscapeDistribution`,",
+                               "not probabilities.")
     ),
-    createsOutput(
-      "ignitionsAndEscapes", "data.table",
-      paste("One row per ignited pixel, in random order: `pixelID` (cell index of `flammableRTM`),",
-            "`igProb`, `ignitions`, `escapeProb`, `escapes` of the coarse pixel it was drawn from, and",
-            "`escaped`, whether this ignition escaped: exactly `escapes` of a coarse pixel's rows are TRUE.")
+    createsOutput("fireSense_IgAndEscapeDistribution", "list",
+                  desc = paste("`list(ignition = , escape = )`: the objective of the fitted models (e.g. `\"count:poisson\"`),",
+                               "which says how `fireSense_burn` draws from the means in `fireSense_IgAndEscapeProbRas`.")
     )
   )
 ))
@@ -132,15 +129,15 @@ doEvent.fireSense_ignitionPredict <- function(sim, eventTime, eventType, debug =
   return(invisible(sim))
 }
 
-#' Predict and draw this year's ignitions and escapes
+#' Predict this year's expected ignitions and escapes
 #'
-#' Averages the per-fold predictions of the ignition models, draws ignitions per coarse pixel
-#' (Poisson), then does the same for escapes (binomial, given ignition). Each ignition is placed in
-#' a random flammable `flammableRTM` pixel inside its coarse pixel.
+#' Averages the per-fold predictions of the ignition models and of the escape models, for every coarse
+#' pixel with covariates. Nothing is drawn: `fireSense_burn` draws ignitions and escapes from these means,
+#' with the distribution named in `fireSense_IgAndEscapeDistribution`.
 #'
 #' @param sim A `simList`.
 #'
-#' @return The `simList`, invisibly, with `fireSense_IgAndEscapeProbRas` and `ignitionsAndEscapes`.
+#' @return The `simList`, invisibly, with `fireSense_IgAndEscapeProbRas` and `fireSense_IgAndEscapeDistribution`.
 IgnitionPredictRun <- function(sim) {
   igCov <- copy(sim$fireSense_igAndEscapePred_Covariates)
 
@@ -151,56 +148,29 @@ IgnitionPredictRun <- function(sim) {
   # The models were fitted on covariates standardized once, over all fitting years; a year's
   #   own mean and sd would make every year look average.
   ## The fitted models: one ignition and one escape fit, or one of each per fitted ELF (named by ELF), each
-  ## applied to the coarse pixels of its own ELF (sim$rasterToMatchLargeELF). The Poisson and binomial draws
-  ## are made once over all pixels, as before, so one ELF gives exactly the old result.
+  ## applied to the coarse pixels of its own ELF (sim$rasterToMatchLargeELF).
   fits <- ignitionFitsByELF(sim, igCov$pixelID)
+  sim$fireSense_IgAndEscapeDistribution <- list(ignition = fitObjective(fits, "ign"),
+                                                escape = fitObjective(fits, "esc"))
 
-  # From here, it makes predictions from each KFold, then averages them to get the probabilities for
-  #   each cell; same for Escape, which is conditional on having ignited.
-  predsIgns <- rep(NA_real_, NROW(igCov))
+  # From here, it makes predictions from each KFold, then averages them to get the expected counts for
+  #   each cell; same for Escape (expected escapes given an ignition), for every cell.
+  predsIgns <- predsEscs <- rep(NA_real_, NROW(igCov))
   for (f in fits) {
     covsHere <- igCov[f$rows]
     # The models were fitted on covariates standardized once, over all fitting years; a year's
     #   own mean and sd would make every year look average.
-    if (rescaleVars) covsHere <- scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted")
-    predsIgns[f$rows] <- foldMeanPrediction(f$ign, covsHere)
+    covsIgn <- if (rescaleVars) scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted") else covsHere
+    covsEsc <- if (rescaleVars) scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted") else covsHere
+    predsIgns[f$rows] <- foldMeanPrediction(f$ign, covsIgn)
+    predsEscs[f$rows] <- foldMeanPrediction(f$esc, covsEsc)
   }
-  igns <- rpois(NROW(predsIgns), lambda = predsIgns) # can't use rtweedie because don't know the dispersion parameter
 
-  whHasIgns <- which(igns > 0)
-  predsEscs <- rep(NA_real_, NROW(igCov))
-  for (f in fits) {
-    rowsEsc <- intersect(whHasIgns, f$rows)
-    covsHere <- igCov[rowsEsc]
-    if (rescaleVars) covsHere <- scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted")
-    # the escape model is tweedie, so can go above 1, below 0 rarely
-    predsEscs[rowsEsc] <- foldMeanPrediction(f$esc, covsHere, clamp01 = TRUE)
-  }
-  predsEscs <- predsEscs[whHasIgns]
-  escs <- rbinom(NROW(predsEscs), size = igns[whHasIgns], prob = predsEscs)
-
-  set(igCov, NULL, c("igProb", "ignitions"), list(predsIgns, igns))
-  set(igCov, whHasIgns, c("escapeProb", "escapes"), list(predsEscs, escs))
-  # Ignite - accounting for spatial resolution of models
-
-  # disaggregate the coarse raster to size of flammableRTM
-  # draw ignitions/escapes from smaller pixel size
-  # The fine-to-coarse cell mapping does not change within a run, so it is computed once (in mod$).
-  igRasDT <- fineCoarseTable(coarseToFineMap(sim$ignitionFitRTM, sim$flammableRTM, store = mod),
-                             sim$flammableRTM)
-
-  # nomatch = NULL --> removes pixels that aren't in igCov, which are non flammable
-  igs <- igRasDT[igCov, on = c("chunkyPixels" = "pixelID"), nomatch = NULL]
-  # randomly sample
-  # use unique because of multiple pixelID per chunkyPixel
-  drawTable <- unique(igs[ignitions > 0, .(chunkyPixels, ignitions, escapes)])
-  pixelID_igs <- placeIgnitions(igs, drawTable)
-
-  #for posterior analysis
+  #for posterior analysis, and for fireSense_burn to draw from
   igProbRas <- rast(sim$ignitionFitRTM)
-  igProbRas[igCov$pixelID] <- igCov$igProb
+  igProbRas[igCov$pixelID] <- predsIgns
   escapeProbRas <- igProbRas
-  escapeProbRas[igCov$pixelID] <- igCov$escapeProb
+  escapeProbRas[igCov$pixelID] <- predsEscs
   sim$fireSense_IgAndEscapeProbRas <- c(igProbRas, escapeProbRas)
   names(sim$fireSense_IgAndEscapeProbRas) <- c("ignitionProb", "escapeProb")
   
@@ -208,17 +178,6 @@ IgnitionPredictRun <- function(sim) {
     #TODO: implement proper plotting control
     Plots(igProbRas, types = Par$.plots, filename = paste0("IgnitionProbability_yr", time(sim)))
   }
-  ## `escapes` counts the coarse pixel's escapes and is repeated on each of its ignitions, so which of
-  ## them escaped is drawn here: exactly `escapes` of the coarse pixel's rows. Drawn after every pixel
-  ## is placed, so the placements do not change.
-  if (NROW(pixelID_igs)) {
-    pixelID_igs[, escaped := seq_len(.N) %in% sample.int(.N, min(escapes[1], .N)), by = "chunkyPixels"]
-  } else {
-    set(pixelID_igs, NULL, "escaped", logical(0))
-  }
-  set(pixelID_igs, NULL, "chunkyPixels", NULL)
-  randomOrder <- sample.int(nrow(pixelID_igs)) # sample(1:0) would give 2 rows
-  sim$ignitionsAndEscapes <- pixelID_igs[randomOrder,] #Randomize order
 
   return(invisible(sim))
 }
@@ -260,7 +219,7 @@ scaleAsFit <- function(covariates, scaleData, fittedName) {
 #'
 #' @param sim A `simList`.
 #' @param pixelID the cells of `sim$ignitionFitRTM` to predict.
-#' @return list, one element per fit, each with `ign`, `esc` and `rows` (indices into `pixelID`).
+#' @return list, one element per fit, each with `ign`, `esc`, `rows` (indices into `pixelID`) and `elf` (its name).
 ignitionFitsByELF <- function(sim, pixelID) {
   ignL <- sim$fireSense_IgnitionFittedList
   if (length(ignL) > 1L) {
@@ -280,91 +239,52 @@ ignitionFitsByELF <- function(sim, pixelID) {
       warning("fireSense_ignitionPredict: ", noELF, " coarse pixels are in no ELF with an ignition fit; ",
               "they get no ignitions", call. = FALSE)
     return(lapply(names(ignL), function(id)
-      list(ign = ignL[[id]], esc = escL[[id]], rows = which(elf == id))))
+      list(ign = ignL[[id]], esc = escL[[id]], rows = which(elf == id), elf = id)))
   }
   list(list(ign = sim$fireSense_IgnitionFitted, esc = sim$fireSense_EscapeFitted,
-            rows = seq_along(pixelID)))
+            rows = seq_along(pixelID), elf = "(one fit)"))
 }
 
-## Mean over the K-fold models of one fit's predictions
-foldMeanPrediction <- function(fit, newdata, clamp01 = FALSE) {
+## The K-fold models of one fit: those whose name contains "Fold"
+foldModels <- function(fit) {
   mods <- fit$modelList$model
   modsOnly <- mods[grep("Fold", names(mods))]
   if (is.null(modsOnly) || !length(modsOnly)) stop("Not tested anymore")
-  preds <- lapply(modsOnly, function(model) {
-    p <- predict(model, newdata = newdata)
-    if (clamp01) pmax(pmin(1, p), 0) else p
-  })
+  modsOnly
+}
+
+## Mean over the K-fold models of one fit's predictions; a count is not below 0
+foldMeanPrediction <- function(fit, newdata) {
+  preds <- lapply(foldModels(fit), function(model) pmax(predict(model, newdata = newdata), 0))
   rowMeans(do.call(cbind, preds))
 }
 
-#' Which coarse cell each fine cell falls in
+#' The objective the fitted models were fitted with
 #'
-#' Regridding the coarse ignition raster onto `flammableRTM` ("near", because the cells may not be
-#' round multiples) took about 3 s a year at 6.7M cells, and the mapping never changes within a run.
-#' It is computed once, from the coarse cell numbers, and kept in `store`; it is rebuilt if the extent,
-#' dimensions or crs of either raster change.
+#' `fireSense_burn` draws from the predicted means with the distribution this implies, so every fold of
+#' every ELF must have been fitted with the same one.
 #'
-#' @param coarse,fine `SpatRaster`s: `ignitionFitRTM` and `flammableRTM`.
-#' @param store An environment to keep the mapping in (the module's `mod`).
+#' @param fits The result of `ignitionFitsByELF()`.
+#' @param process `"ign"` (ignition) or `"esc"` (escape).
 #'
-#' @return A vector with one element per fine cell: its coarse cell number, `NA` outside the coarse raster.
-coarseToFineMap <- function(coarse, fine, store) {
-  gridKey <- function(r) list(as.vector(terra::ext(r)), dim(r), terra::crs(r))
-  key <- list(gridKey(coarse), gridKey(fine))
-  if (!is.null(store$coarseToFine) && identical(store$coarseToFine$key, key))
-    return(store$coarseToFine$map)
-
-  coarseIds <- rast(coarse)
-  coarseIds[] <- seq_len(ncell(coarseIds))
-  coarseIds <- postProcess(coarseIds, to = fine, method = "near")
-  map <- as.vector(terra::values(coarseIds, mat = FALSE))
-  store$coarseToFine <- list(key = key, map = map)
-  map
-}
-
-#' The fine cells and their coarse cells, for one year
-#'
-#' @param map The result of `coarseToFineMap()`.
-#' @param fine `flammableRTM`: cells not equal to 1 are left out.
-#'
-#' @return A `data.table` with `pixelID` (fine cell) and `chunkyPixels` (coarse cell).
-fineCoarseTable <- function(map, fine) {
-  flam <- fine[]
-  keep <- which(!is.na(map) & !(!is.na(flam) & flam != 1))
-  data.table(pixelID = keep, chunkyPixels = map[keep])
-}
-
-#' Place each coarse pixel's ignitions on its fine pixels
-#'
-#' For each row of `drawTable`, draws `ignitions` of the fine pixels of that coarse pixel and returns
-#' their rows of `igs`, in `igs` row order. One `split()` of the candidate rows and a pixelID-to-row
-#' lookup replace a scan of all of `igs` for every ignited coarse pixel.
-#'
-#' The `sample()` calls are made in `drawTable` order, on the candidate `pixelID`s in `igs` order. This
-#' includes the `sample(x, size)` behaviour for a single candidate `x`, which draws from `1:x`; the
-#' pixels with those IDs are then returned, wherever they are. That quirk is kept so results do not change.
-#'
-#' @param igs `data.table` of fine pixels with `pixelID`, `igProb`, `ignitions`, `escapeProb`, `escapes`
-#'   and `chunkyPixels` (the coarse pixel).
-#' @param drawTable `data.table` with one row per ignited coarse pixel: `chunkyPixels`, `ignitions`.
-#'
-#' @return A `data.table` with the `igs` columns `pixelID`, `igProb`, `ignitions`, `escapeProb`,
-#'   `escapes`, `chunkyPixels`, for the drawn pixels.
-placeIgnitions <- function(igs, drawTable) {
-  sel <- which(igs$chunkyPixels %in% drawTable$chunkyPixels)
-  rowsByChunk <- split(sel, igs$chunkyPixels[sel])
-  rowOfPixel <- integer(max(igs$pixelID, 0L))
-  rowOfPixel[igs$pixelID] <- seq_len(nrow(igs))
-  cols <- c("pixelID", "igProb", "ignitions", "escapeProb", "escapes", "chunkyPixels")
-  out <- vector("list", nrow(drawTable))
-  for (i in seq_len(nrow(drawTable))) {
-    rows <- rowsByChunk[[as.character(drawTable$chunkyPixels[i])]]
-    drawn <- sample(igs$pixelID[rows], size = drawTable$ignitions[i])
-    hit <- rowOfPixel[drawn[drawn >= 1 & drawn <= length(rowOfPixel)]]
-    out[[i]] <- igs[sort(hit[hit > 0]), ..cols]
-  }
-  ## no ignited coarse pixel: rbindlist(list()) has no columns, so keep the schema of a normal year
-  if (!length(out)) return(igs[integer(0), ..cols])
-  rbindlist(out)
+#' @return The objective, e.g. `"count:poisson"`.
+fitObjective <- function(fits, process) {
+  what <- c(ign = "ignition", esc = "escape")[[process]]
+  perELF <- lapply(fits, function(f) {
+    obj <- vapply(foldModels(f[[process]]), function(model) {
+      o <- tryCatch(model$params$objective, error = function(e) NULL)
+      if (!is.character(o) || length(o) != 1L || is.na(o))
+        stop("fireSense_ignitionPredict: cannot read the objective of a fitted ", what,
+             " model (`model$params$objective`); fireSense_burn needs it to draw from the predictions")
+      o
+    }, "")
+    if (length(unique(obj)) > 1L)
+      stop("fireSense_ignitionPredict: the folds of the ", what, " model of ELF ", f$elf,
+           " have different objectives: ", paste(unique(obj), collapse = ", "))
+    obj[[1L]]
+  })
+  if (length(unique(unlist(perELF))) > 1L)
+    stop("fireSense_ignitionPredict: the ELFs' ", what, " models have different objectives: ",
+         paste0(vapply(fits, `[[`, "", "elf"), " (", unlist(perELF), ")", collapse = ", "))
+  perELF[[1L]]
 }

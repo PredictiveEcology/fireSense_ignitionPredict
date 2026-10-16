@@ -1,5 +1,10 @@
 # fireSense_ignitionPredict (development version)
 
+- Breaking: the module now only predicts; it draws nothing and no longer makes `ignitionsAndEscapes`. `fireSense_burn` draws the ignitions and escapes from the new `fireSense_IgAndEscapeDistribution` and `fireSense_IgAndEscapeProbRas`, and places them (`placeIgnitions()`, `coarseToFineMap()` and `fineCoarseTable()` moved there). `flammableRTM` is no longer an input.
+- `fireSense_IgAndEscapeProbRas` layer `escapeProb` is the expected escapes per pixel and year for every pixel (it was NA where no ignition was drawn), no longer clamped to [0, 1]; `ignitionProb` is the expected ignitions.
+- New output `fireSense_IgAndEscapeDistribution`, `list(ignition, escape)`, the objective read from the fitted models; stops if it cannot be read or folds or ELFs disagree.
+- Escapes now follow the fitted Poisson model (drawn in `fireSense_burn` as Poisson, capped at the ignitions), not `rbinom(ignitions, min(mean, 1))`; a seed no longer reproduces earlier runs.
+
 - A year with no ignitions now gives a 0-row `ignitionsAndEscapes` with the same columns and types (`pixelID`, `igProb`, `ignitions`, `escapeProb`, `escapes`, `escaped`) as any other year. Before, it had no columns, so code reading `$pixelID` got `NULL` (`fireSenseUtils::hindcastSimulated()` failed). Years with ignitions are unchanged.
 
 - `SpaDES.core` is now in `reqdPkgs` (`scheduleEvent()`, `P()`, `Plots()` are used).

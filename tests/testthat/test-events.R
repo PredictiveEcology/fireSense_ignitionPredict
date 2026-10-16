@@ -45,7 +45,6 @@ test_that("the save event says it does nothing, and changes nothing", {
   expect_equal(evOf(SpaDES.core::completed(with), "save")$eventTime, 2001)
   expect_identical(nrow(evOf(SpaDES.core::events(with), "save")), 0L)
   expect_identical(sort(ls(with)), sort(ls(without)))
-  expect_identical(igTable(with), igTable(without))
   expect_identical(probVals(with), probVals(without))
   expect_identical(with$fireSense_IgnitionFitted, without$fireSense_IgnitionFitted)
   expect_length(list.files(SpaDES.core::outputPath(with), recursive = TRUE), 0L)
@@ -54,6 +53,6 @@ test_that("the save event says it does nothing, and changes nothing", {
 test_that("nothing is predicted before the first run event", {
   sim <- toyIgRun(inputsNoIgnition(), params = list(.runInitialTime = 2005),
                   times = list(start = 2001, end = 2002))
-  expect_null(sim$ignitionsAndEscapes)
   expect_null(sim$fireSense_IgAndEscapeProbRas)
+  expect_null(sim$fireSense_IgAndEscapeDistribution)
 })

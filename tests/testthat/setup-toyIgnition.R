@@ -26,7 +26,9 @@ predict.toyFold <- function(object, newdata, ...) {
 }
 registerS3method("predict", "toyFold", predict.toyFold)
 
-toyFold <- function(fun, label) structure(list(fun = fun, label = label), class = "toyFold")
+## `objective` is what an xgboost model keeps in `$params$objective`; both fitted processes are Poisson counts
+toyFold <- function(fun, label, objective = "count:poisson")
+  structure(list(fun = fun, label = label, params = list(objective = objective)), class = "toyFold")
 
 ## calls logged for one model label, in call order
 toyCalls <- function(label) {
@@ -34,25 +36,7 @@ toyCalls <- function(label) {
   lapply(keys, get, envir = toyLog)
 }
 
-## Grids, both 0..4 x 0..4. The fine (simulation) grid is 8 x 8 with 0.5-unit cells; the
-## coarse (fitting) grid is 2 x 2 with 2-unit cells, so each coarse cell holds 16 fine cells:
-## coarse 1 = fine rows 1-4, cols 1-4; coarse 2 = rows 1-4, cols 5-8;
-## coarse 3 = rows 5-8, cols 1-4; coarse 4 = rows 5-8, cols 5-8.
-## Fine cell number = (row - 1) * 8 + col.
-coarseOfFine <- function(cell) {
-  row <- (cell - 1) %/% 8 + 1
-  col <- (cell - 1) %% 8 + 1
-  (row > 4) * 2 + (col > 4) + 1
-}
-
-## By default fine cells 5 and 6 (in coarse 2) and 64 (in coarse 4) are not flammable.
-toyFlammable <- function(nonFlammable = c(5L, 6L, 64L)) {
-  r <- terra::rast(nrows = 8, ncols = 8, xmin = 0, xmax = 4, ymin = 0, ymax = 4, vals = 1,
-                   crs = "EPSG:3005")
-  r[nonFlammable] <- 0
-  r
-}
-
+## The coarse (fitting) grid is 2 x 2 with 2-unit cells over 0..4 x 0..4.
 toyCoarse <- function() {
   terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 4, ymin = 0, ymax = 4, vals = 1,
               crs = "EPSG:3005")
@@ -74,7 +58,6 @@ toyScaleData <- function(center = c(pixelID = 2.5, MDC = 100, youngAge = 0.5, ye
 ## `ignFuns` and `escFuns` are lists of functions of newdata, one per fold
 toyIgInputs <- function(ignFuns, escFuns, covs = toyIgCovariates(),
                         foldNames = paste0("Fold", seq_along(ignFuns)),
-                        flammableRTM = toyFlammable(),
                         ignScaleData = toyScaleData(), escScaleData = toyScaleData()) {
   ign <- Map(toyFold, ignFuns, paste0("ign", seq_along(ignFuns)))
   esc <- Map(toyFold, escFuns, paste0("esc", seq_along(escFuns)))
@@ -88,7 +71,6 @@ toyIgInputs <- function(ignFuns, escFuns, covs = toyIgCovariates(),
       list(modelList = list(model = esc), scaleData = escScaleData),
       class = "fireSense_EscapeFit"),
     fireSense_igAndEscapePred_Covariates = covs,
-    flammableRTM = flammableRTM,
     ignitionFitRTM = toyCoarse()
   )
 }
@@ -117,7 +99,6 @@ toyIgRun <- function(objects, ..., seed = 42) {
     })
 }
 
-igTable <- function(sim) as.data.frame(sim$ignitionsAndEscapes)
 probVals <- function(sim) terra::values(sim$fireSense_IgAndEscapeProbRas)
 
 ## a constant prediction, whatever the covariates

@@ -43,10 +43,10 @@ test_that("with several fits, a missing ELF raster or mismatched lists stop with
 
 test_that("ELFs fitted with different objectives stop, naming the ELFs and objectives", {
   o <- multiInputs()
-  o$fireSense_IgnitionFittedList$B$modelList$model$Fold1$params$objective <- "reg:tweedie"
+  attr(o$fireSense_IgnitionFittedList$B$modelList$model$Fold1, "params")$objective <- "reg:tweedie"
   expect_error(toyIgRun(o), "ELFs' ignition models have different objectives: A \\(count:poisson\\), B \\(reg:tweedie\\)")
   o <- multiInputs()
-  o$fireSense_EscapeFittedList$A$modelList$model$Fold1$params$objective <- "reg:squarederror"
+  attr(o$fireSense_EscapeFittedList$A$modelList$model$Fold1, "params")$objective <- "reg:squarederror"
   expect_error(toyIgRun(o), "ELFs' escape models have different objectives: A \\(reg:squarederror\\), B \\(count:poisson\\)")
 })
 

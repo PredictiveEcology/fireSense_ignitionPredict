@@ -1,5 +1,6 @@
 # fireSense_ignitionPredict (development version)
 
+- Fix: the objective of the fitted models is read with `xgboost::xgb.config()` (falling back to `attr(model, "params")`), not `model$params`, which is `NULL` for xgboost >= 3 boosters, so every prediction run stopped at the ignition step. `xgboost (>= 3.0.0)` is now in `reqdPkgs`.
 - Breaking: the module now only predicts; it draws nothing and no longer makes `ignitionsAndEscapes`. `fireSense_burn` draws the ignitions and escapes from the new `fireSense_IgAndEscapeDistribution` and `fireSense_IgAndEscapeProbRas`, and places them (`placeIgnitions()`, `coarseToFineMap()` and `fineCoarseTable()` moved there). `flammableRTM` is no longer an input.
 - `fireSense_IgAndEscapeProbRas` layer `escapeProb` is the expected escapes per pixel and year for every pixel (it was NA where no ignition was drawn), no longer clamped to [0, 1]; `ignitionProb` is the expected ignitions.
 - New output `fireSense_IgAndEscapeDistribution`, `list(ignition, escape)`, the objective read from the fitted models; stops if it cannot be read or folds or ELFs disagree.

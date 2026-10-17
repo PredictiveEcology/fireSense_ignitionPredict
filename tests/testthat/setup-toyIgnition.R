@@ -5,8 +5,8 @@
 ## data.table, so `dt[i, j]` there is NOT data.table-aware: tables are handled with base
 ## subsetting and data.table::set() only.
 ##
-## The fitted models are stand-ins of class "toyFold". xgboost is not among the module's
-## `reqdPkgs`, so CI does not have it; and a stand-in lets a test see exactly what the
+## The fitted models are stand-ins of class "toyFold" (test-xgboost-objective.R uses real boosters).
+## A stand-in lets a test see exactly what the
 ## module hands to predict(). Each "model" is a function of `newdata`; every call is
 ## logged in `toyLog`.
 
@@ -26,9 +26,9 @@ predict.toyFold <- function(object, newdata, ...) {
 }
 registerS3method("predict", "toyFold", predict.toyFold)
 
-## `objective` is what an xgboost model keeps in `$params$objective`; both fitted processes are Poisson counts
+## `objective` is what a reloaded xgboost model keeps in `attr(, "params")$objective`; both fitted processes are Poisson counts
 toyFold <- function(fun, label, objective = "count:poisson")
-  structure(list(fun = fun, label = label, params = list(objective = objective)), class = "toyFold")
+  structure(list(fun = fun, label = label), params = list(objective = objective), class = "toyFold")
 
 ## calls logged for one model label, in call order
 toyCalls <- function(label) {

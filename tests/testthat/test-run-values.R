@@ -56,23 +56,23 @@ test_that("the distribution is read from the fitted models' objective", {
   expect_identical(sim$fireSense_IgAndEscapeDistribution,
                    list(ignition = "count:poisson", escape = "count:poisson"))
   ins <- twoFolds()
-  ins$fireSense_EscapeFitted$modelList$model$Fold1$params$objective <- "reg:tweedie"
+  attr(ins$fireSense_EscapeFitted$modelList$model$Fold1, "params")$objective <- "reg:tweedie"
   expect_identical(toyIgRun(ins)$fireSense_IgAndEscapeDistribution,
                    list(ignition = "count:poisson", escape = "reg:tweedie"))
 })
 
 test_that("an unreadable objective stops", {
   ins <- twoFolds()
-  ins$fireSense_IgnitionFitted$modelList$model$Fold1$params <- NULL
+  attr(ins$fireSense_IgnitionFitted$modelList$model$Fold1, "params") <- NULL
   expect_error(toyIgRun(ins), "cannot read the objective of a fitted ignition model")
   ins <- twoFolds()
-  ins$fireSense_EscapeFitted$modelList$model$Fold1$params$objective <- NULL
+  attr(ins$fireSense_EscapeFitted$modelList$model$Fold1, "params")$objective <- NULL
   expect_error(toyIgRun(ins), "cannot read the objective of a fitted escape model")
 })
 
 test_that("folds with different objectives stop", {
   ins <- toyIgInputs(list(byPixel(c(0, 2, 3, 0)), byPixel(c(0, 4, 3, 0))), list(constant(1)))
-  ins$fireSense_IgnitionFitted$modelList$model$Fold2$params$objective <- "reg:tweedie"
+  attr(ins$fireSense_IgnitionFitted$modelList$model$Fold2, "params")$objective <- "reg:tweedie"
   expect_error(toyIgRun(ins), "folds of the ignition model.*different objectives: count:poisson, reg:tweedie")
 })
 

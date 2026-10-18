@@ -20,7 +20,7 @@ defineModule(sim, list(
     "data.table", "magrittr", "terra", "xgboost (>= 3.0.0)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/fireSenseUtils@development (>=0.1.0)"
+    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9104)"
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),
   parameters = bindrows(
@@ -259,8 +259,6 @@ foldMeanPrediction <- function(fit, newdata) {
   rowMeans(do.call(cbind, preds))
 }
 
-isOneString <- function(x) is.character(x) && length(x) == 1L && !is.na(x)
-
 #' The objective the fitted models were fitted with
 #'
 #' `fireSense_burn` draws from the predicted means with the distribution this implies, so every fold of
@@ -273,15 +271,10 @@ isOneString <- function(x) is.character(x) && length(x) == 1L && !is.na(x)
 fitObjective <- function(fits, process) {
   what <- c(ign = "ignition", esc = "escape")[[process]]
   perELF <- lapply(fits, function(f) {
-    obj <- vapply(foldModels(f[[process]]), function(model) {
-      o <- tryCatch(xgboost::xgb.config(model)$learner$objective$name, error = function(e) NULL)
-      if (!isOneString(o)) o <- tryCatch(attr(model, "params")$objective, error = function(e) NULL)
-      if (!isOneString(o))
-        stop("fireSense_ignitionPredict: cannot read the objective of a fitted ", what,
-             " model (tried `xgboost::xgb.config(model)$learner$objective$name` and `attr(model, \"params\")$objective`);",
-             " fireSense_burn needs it to draw from the predictions")
-      o
-    }, "")
+    obj <- fireSenseUtils::xgbObjective(foldModels(f[[process]]))
+    if (anyNA(obj))
+      stop("fireSense_ignitionPredict: cannot read the objective of a fitted ", what,
+           " model (`fireSenseUtils::xgbObjective()` found none); fireSense_burn needs it to draw from the predictions")
     if (length(unique(obj)) > 1L)
       stop("fireSense_ignitionPredict: the folds of the ", what, " model of ELF ", f$elf,
            " have different objectives: ", paste(unique(obj), collapse = ", "))

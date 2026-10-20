@@ -2994,8 +2994,8 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">fireSense_ignitionPredict Manual</h1>
-<h3 class="subtitle">v.1.2.0.9000</h3>
-<h4 class="date">Last updated: 2026-10-14</h4>
+<h3 class="subtitle">v.1.2.0.9004</h3>
+<h4 class="date">Last updated: 2026-10-20</h4>
 
 </div>
 
@@ -3015,12 +3015,12 @@ border-radius: 0px;
 <h2>Module Overview</h2>
 <div id="module-summary" class="section level3">
 <h3>Module summary</h3>
-<p>Each year, predicts ignitions and escapes from the models fitted by <em>fireSense_ignitionFit</em> and <em>fireSense_EscapeFit</em>, for the ignition component of fireSense <span class="citation">(<a href="#ref-Marchal:2017a">Marchal, Steve G. Cumming, et al. 2017b</a>; <a href="#ref-Marchal:2017b">Marchal, Steve G. Cumming, et al. 2017a</a>; <a href="#ref-Marchal:2019">Marchal et al. 2019</a>)</span>.</p>
+<p>Each year, predicts the expected number of ignitions and of escapes from the models fitted by <em>fireSense_ignitionFit</em> and <em>fireSense_EscapeFit</em>, for the ignition component of fireSense <span class="citation">(<a href="#ref-Marchal:2017a">Marchal, Steve G. Cumming, et al. 2017b</a>; <a href="#ref-Marchal:2017b">Marchal, Steve G. Cumming, et al. 2017a</a>; <a href="#ref-Marchal:2019">Marchal et al. 2019</a>)</span>.</p>
 <ol style="list-style-type: decimal">
 <li>The covariates in <code>fireSense_igAndEscapePred_Covariates</code> are rescaled with <code>fireSenseUtils::prepareCovariatesOuter()</code>, the function used for fitting (<code>rescaleVars</code>, <code>modelAlgorithm</code>).</li>
-<li>Expected ignitions per coarse pixel are the mean of the predictions of the per-fold ignition models; the number of ignitions is drawn from a Poisson.</li>
-<li>For coarse pixels with ignitions, the escape probability is the mean of the per-fold escape models, clamped to [0, 1]; escapes are drawn from a binomial with size = ignitions.</li>
-<li>Each ignition is placed in a randomly chosen flammable pixel of <code>flammableRTM</code> inside its coarse pixel.</li>
+<li>Expected ignitions per coarse pixel are the mean of the predictions of the per-fold ignition models.</li>
+<li>Expected escapes per coarse pixel (given an ignition) are the mean of the per-fold escape models, for every pixel. Predictions below 0 are made 0.</li>
+<li>The objective the models were fitted with is passed on in <code>fireSense_IgAndEscapeDistribution</code>. Nothing is drawn here: <em>fireSense_burn</em> draws the ignitions and escapes, places them and spreads the fires.</li>
 </ol>
 <p>Only <code>xgboost</code> models are supported.</p>
 </div>
@@ -3129,20 +3129,6 @@ data.table
 </td>
 <td style="text-align:left;">
 This year’s covariates, from <code>fireSense_dataPrepPredict</code>. <code>pixelID</code> is the cell index of <code>ignitionFitRTM</code>.
-</td>
-<td style="text-align:left;">
-NA
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-flammableRTM
-</td>
-<td style="text-align:left;">
-SpatRaster
-</td>
-<td style="text-align:left;">
-Binary raster, 1 where the pixel is flammable.
 </td>
 <td style="text-align:left;">
 NA
@@ -3345,13 +3331,13 @@ Should this entire module be run with caching activated? This is generally inten
 <h3>Events</h3>
 <ul>
 <li><code>init</code>: schedules <code>run</code> at <code>.runInitialTime</code>, and <code>save</code> at <code>.saveInitialTime</code> if that is not <code>NA</code>.</li>
-<li><code>run</code>: makes the predictions and draws described above; repeats every <code>.runInterval</code>.</li>
+<li><code>run</code>: makes the predictions described above; repeats every <code>.runInterval</code>.</li>
 <li><code>save</code>: does nothing but say so. To save the predicted raster, name <code>fireSense_IgAndEscapeProbRas</code> in <code>outputs(sim)</code>.</li>
 </ul>
 </div>
 <div id="plotting" class="section level3">
 <h3>Plotting</h3>
-<p>If <code>.saveInterval</code> is not <code>NA</code>, the ignition probability raster is plotted each year with <code>Plots()</code>.</p>
+<p>If <code>.saveInterval</code> is not <code>NA</code>, the expected-ignitions raster is plotted each year with <code>Plots()</code>.</p>
 </div>
 <div id="module-outputs" class="section level3">
 <h3>Module outputs</h3>
@@ -3382,18 +3368,18 @@ fireSense_IgAndEscapeProbRas
 SpatRaster
 </td>
 <td style="text-align:left;">
-Two layers, <code>ignitionProb</code> (expected ignitions per pixel) and <code>escapeProb</code>, at the resolution of <code>ignitionFitRTM</code>.
+Two layers at the resolution of <code>ignitionFitRTM</code>, for every pixel with covariates: <code>ignitionProb</code>, the expected number of ignitions per pixel and year, and <code>escapeProb</code>, the expected number of escapes per pixel and year, given at least one ignition. Both are means of the fitted distributions in <code>fireSense_IgAndEscapeDistribution</code>, not probabilities. And two more, <code>ignitionYearSD</code> and <code>escapeYearSD</code>: the sd of the year effect of each pixel’s ELF’s ignition and escape fit (<code>modelList$yearSD</code>, 0 for a fit without one), with which <code>fireSense_burn</code> scales both means each year.
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-ignitionsAndEscapes
+fireSense_IgAndEscapeDistribution
 </td>
 <td style="text-align:left;">
-data.table
+list
 </td>
 <td style="text-align:left;">
-One row per ignited pixel, in random order: <code>pixelID</code> (cell index of <code>flammableRTM</code>), <code>igProb</code>, <code>ignitions</code>, <code>escapeProb</code>, <code>escapes</code> of the coarse pixel it was drawn from, and <code>escaped</code>, whether this ignition escaped: exactly <code>escapes</code> of a coarse pixel’s rows are TRUE.
+<code>list(ignition = , escape = )</code>: the objective of the fitted models (e.g. <code>&quot;count:poisson&quot;</code>), which says how <code>fireSense_burn</code> draws from the means in <code>fireSense_IgAndEscapeProbRas</code>.
 </td>
 </tr>
 </tbody>
@@ -3401,7 +3387,7 @@ One row per ignited pixel, in random order: <code>pixelID</code> (cell index of 
 </div>
 <div id="links-to-other-modules" class="section level3">
 <h3>Links to other modules</h3>
-<p>Runs after <em>fireSense_dataPrepPredict</em>, which supplies the covariates. <code>ignitionsAndEscapes</code> is used by <em>fireSense</em> to start fires.
+<p>Runs after <em>fireSense_dataPrepPredict</em>, which supplies the covariates. <code>fireSense_IgAndEscapeProbRas</code> and <code>fireSense_IgAndEscapeDistribution</code> are used by <em>fireSense_burn</em>, which draws the ignitions and escapes and starts the fires.
 It is normally run as part of the <a href="https://github.com/PredictiveEcology/fireSense">fireSense</a> module group.</p>
 </div>
 <div id="getting-help" class="section level3">

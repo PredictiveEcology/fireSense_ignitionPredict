@@ -54,3 +54,12 @@ test_that("with several ELFs sharing an objective, the distribution is that obje
   expect_identical(toyIgRun(multiInputs())$fireSense_IgAndEscapeDistribution,
                    list(ignition = "count:poisson", escape = "count:poisson"))
 })
+
+test_that("each ELF's pixels get that ELF's year-effect sd", {
+  o <- multiInputs()
+  o$fireSense_IgnitionFittedList$A$modelList$yearSD <- 0.4
+  o$fireSense_EscapeFittedList$B$modelList$yearSD <- 1.1      # A's escape fit has none: 0
+  sim <- toyIgRun(o)
+  expect_equal(probVals(sim)[, "ignitionYearSD"], c(0.4, 0, 0.4, 0))
+  expect_equal(probVals(sim)[, "escapeYearSD"], c(0, 1.1, 0, 1.1))
+})

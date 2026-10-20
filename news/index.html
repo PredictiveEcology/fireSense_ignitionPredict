@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_ignitionPredict</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9001</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9004</span>
       </span>
     </div>
 
@@ -53,9 +53,16 @@
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="development version" id="firesense_ignitionpredict-development-version">fireSense_ignitionPredict (development version)<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-development-version"></a></h2>
-<ul><li>
-<code>SpaDES.core</code> is now in <code>reqdPkgs</code> (<code>scheduleEvent()</code>, <code>P()</code>, <code>Plots()</code> are used).</li>
-<li>Ignitions are placed on fine pixels with one <code><a href="https://rdrr.io/r/base/split.html" class="external-link">split()</a></code> of the candidate pixels and a pixelID-to-row lookup, instead of two scans of the whole fine-pixel table for every ignited coarse pixel (about 3 s a year at 1.3M flammable fine pixels). The same draws are made in the same order, so ignitions, escapes and the random number stream are unchanged.</li>
+<ul><li><p><code>fireSense_IgAndEscapeProbRas</code> has two more layers, <code>ignitionYearSD</code> and <code>escapeYearSD</code>: the sd of the year effect of each pixel’s ELF’s ignition and escape fit (<code>modelList$yearSD</code>, written by fireSense_ignitionFit; 0 for a fit stored without one, <code><a href="../reference/yearSDOf.html">yearSDOf()</a></code>). <code>fireSense_burn</code> draws one z per year, shared with spread, and multiplies both means by <code>exp(sd * z - sd^2 / 2)</code>. The <code>ignitionProb</code> and <code>escapeProb</code> layers are unchanged.</p></li>
+<li><p>The objective of a fitted model is read with <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/xgbObjective.html" class="external-link">fireSenseUtils::xgbObjective()</a></code>, the one copy shared with <code>fireSense_ignitionFit</code>, instead of this module’s own lookup; same result. Needs fireSenseUtils (&gt;= 0.2.3.9104).</p></li>
+<li><p>Fix: the objective of the fitted models is read with <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.config.html" class="external-link">xgboost::xgb.config()</a></code> (falling back to <code>attr(model, "params")</code>), not <code>model$params</code>, which is <code>NULL</code> for xgboost &gt;= 3 boosters, so every prediction run stopped at the ignition step. <code>xgboost (&gt;= 3.0.0)</code> is now in <code>reqdPkgs</code>.</p></li>
+<li><p>Breaking: the module now only predicts; it draws nothing and no longer makes <code>ignitionsAndEscapes</code>. <code>fireSense_burn</code> draws the ignitions and escapes from the new <code>fireSense_IgAndEscapeDistribution</code> and <code>fireSense_IgAndEscapeProbRas</code>, and places them (<code>placeIgnitions()</code>, <code>coarseToFineMap()</code> and <code>fineCoarseTable()</code> moved there). <code>flammableRTM</code> is no longer an input.</p></li>
+<li><p><code>fireSense_IgAndEscapeProbRas</code> layer <code>escapeProb</code> is the expected escapes per pixel and year for every pixel (it was NA where no ignition was drawn), no longer clamped to [0, 1]; <code>ignitionProb</code> is the expected ignitions.</p></li>
+<li><p>New output <code>fireSense_IgAndEscapeDistribution</code>, <code>list(ignition, escape)</code>, the objective read from the fitted models; stops if it cannot be read or folds or ELFs disagree.</p></li>
+<li><p>Escapes now follow the fitted Poisson model (drawn in <code>fireSense_burn</code> as Poisson, capped at the ignitions), not <code>rbinom(ignitions, min(mean, 1))</code>; a seed no longer reproduces earlier runs.</p></li>
+<li><p>A year with no ignitions now gives a 0-row <code>ignitionsAndEscapes</code> with the same columns and types (<code>pixelID</code>, <code>igProb</code>, <code>ignitions</code>, <code>escapeProb</code>, <code>escapes</code>, <code>escaped</code>) as any other year. Before, it had no columns, so code reading <code>$pixelID</code> got <code>NULL</code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/hindcastSimulated.html" class="external-link">fireSenseUtils::hindcastSimulated()</a></code> failed). Years with ignitions are unchanged.</p></li>
+<li><p><code>SpaDES.core</code> is now in <code>reqdPkgs</code> (<code>scheduleEvent()</code>, <code>P()</code>, <code>Plots()</code> are used).</p></li>
+<li><p>Ignitions are placed on fine pixels with one <code><a href="https://rdrr.io/r/base/split.html" class="external-link">split()</a></code> of the candidate pixels and a pixelID-to-row lookup, instead of two scans of the whole fine-pixel table for every ignited coarse pixel (about 3 s a year at 1.3M flammable fine pixels). The same draws are made in the same order, so ignitions, escapes and the random number stream are unchanged.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.2.0" id="firesense_ignitionpredict-120">fireSense_ignitionPredict 1.2.0<a class="anchor" aria-label="anchor" href="#firesense_ignitionpredict-120"></a></h2>

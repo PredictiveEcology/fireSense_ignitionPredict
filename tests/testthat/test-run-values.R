@@ -10,7 +10,7 @@ twoFolds <- function(escFuns = list(constant(1)), ...) {
 test_that("ignition surface is the mean of the per-fold predictions, on the coarse grid", {
   sim <- toyIgRun(twoFolds())
   ras <- sim$fireSense_IgAndEscapeProbRas
-  expect_identical(names(ras), c("ignitionProb", "escapeProb"))
+  expect_identical(names(ras), c("ignitionProb", "escapeProb", "ignitionYearSD", "escapeYearSD"))
   expect_true(terra::compareGeom(ras, toyCoarse()))
   ## fold means: (0+0)/2, (2+4)/2, (3+3)/2, (0+0)/2
   expect_equal(probVals(sim)[, "ignitionProb"], c(0, 3, 3, 0))
@@ -90,4 +90,19 @@ test_that("the covariate table in the simList is not modified", {
   sim <- toyIgRun(twoFolds())
   expect_equal(as.data.frame(sim$fireSense_igAndEscapePred_Covariates),
                as.data.frame(toyIgCovariates()))
+})
+
+test_that("each pixel gets its fits' year-effect sd; a fit stored without one gives 0", {
+  ## the toy fits have no modelList$yearSD, as ledger rows written before it existed
+  sim <- toyIgRun(twoFolds())
+  expect_equal(probVals(sim)[, "ignitionYearSD"], rep(0, 4))
+  expect_equal(probVals(sim)[, "escapeYearSD"], rep(0, 4))
+  ins <- twoFolds()
+  ins$fireSense_IgnitionFitted$modelList$yearSD <- 0.45
+  ins$fireSense_EscapeFitted$modelList$yearSD <- 0.8
+  sim <- toyIgRun(ins)
+  expect_equal(probVals(sim)[, "ignitionYearSD"], rep(0.45, 4))
+  expect_equal(probVals(sim)[, "escapeYearSD"], rep(0.8, 4))
+  ## the means are unchanged: the year effect is drawn in fireSense_burn
+  expect_equal(probVals(sim)[, c("ignitionProb", "escapeProb")], probVals(toyIgRun(twoFolds()))[, c("ignitionProb", "escapeProb")])
 })

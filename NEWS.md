@@ -1,5 +1,7 @@
 # fireSense_ignitionPredict (development version)
 
+* `ignitionFitRTM`, the coarse grid the probability rasters are made on, is declared as an input (it was read undeclared).
+
 - `fireSense_IgAndEscapeProbRas` has two more layers, `ignitionYearSD` and `escapeYearSD`: the sd of the year effect of each pixel's ELF's ignition and escape fit (`modelList$yearSD`, written by fireSense_ignitionFit; 0 for a fit stored without one, `yearSDOf()`). `fireSense_burn` draws one z per year, shared with spread, and multiplies both means by `exp(sd * z - sd^2 / 2)`. The `ignitionProb` and `escapeProb` layers are unchanged.
 - The objective of a fitted model is read with `fireSenseUtils::xgbObjective()`, the one copy shared with `fireSense_ignitionFit`, instead of this module's own lookup; same result. Needs fireSenseUtils (>= 0.2.3.9104).
 - Fix: the objective of the fitted models is read with `xgboost::xgb.config()` (falling back to `attr(model, "params")`), not `model$params`, which is `NULL` for xgboost >= 3 boosters, so every prediction run stopped at the ignition step. `xgboost (>= 3.0.0)` is now in `reqdPkgs`.

@@ -1,7 +1,7 @@
 ---
 title: "fireSense_ignitionPredict Manual"
 subtitle: "v.1.2.0.9005"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -102,6 +102,12 @@ Table \@ref(tab:moduleInputs-fireSense-ignitionPredict) shows the full list of m
    <td style="text-align:left;"> This year's covariates, from `fireSense_dataPrepPredict`. `pixelID` is the cell index of `ignitionFitRTM`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
+  <tr>
+   <td style="text-align:left;"> ignitionFitRTM </td>
+   <td style="text-align:left;"> SpatRaster </td>
+   <td style="text-align:left;"> The coarse grid of `fireSense_igAndEscapePred_Covariates`: from `fireSense_dataPrepFit`, else `fireSense_dataPrepPredict`. The probability rasters are made on it. </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
 </tbody>
 </table>
 
@@ -118,6 +124,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -128,6 +135,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Algorithm used to fit the models; only `xgboost` is supported. Must agree with the value in the other fireSense modules. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> rescaleVars </td>
@@ -136,6 +144,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Rescale the covariates before predicting? With `xgboost` they are standardized with `scale()`. Must agree with the value in the other fireSense modules. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .runInitialTime </td>
@@ -144,6 +153,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Time of the first prediction. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .runInterval </td>
@@ -152,6 +162,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Interval between predictions, in years. `NA` predicts once. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .saveInitialTime </td>
@@ -160,6 +171,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Time of the `save` event, which does nothing. `NA` means never. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .saveInterval </td>
@@ -168,6 +180,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> If not `NA`, the ignition probability raster is plotted each year. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .studyAreaName </td>
@@ -176,6 +189,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Human-readable name for the study area used. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -184,6 +198,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Should this entire module be run with caching activated? This is generally intended for data-type modules, where stochasticity and time are not relevant </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>

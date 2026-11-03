@@ -205,6 +205,20 @@ This year’s covariates, from <code>fireSense_dataPrepPredict</code>. <code>pix
 NA
 </td>
 </tr>
+<tr>
+<td style="text-align:left;">
+ignitionFitRTM
+</td>
+<td style="text-align:left;">
+SpatRaster
+</td>
+<td style="text-align:left;">
+The coarse grid of <code>fireSense_igAndEscapePred_Covariates</code>: from <code>fireSense_dataPrepFit</code>, else <code>fireSense_dataPrepPredict</code>. The probability rasters are made on it.
+</td>
+<td style="text-align:left;">
+NA
+</td>
+</tr>
 </tbody>
 </table>
 <p>Summary of user-visible parameters (Table @ref(tab:moduleParams-fireSense-ignitionPredict))</p>
@@ -231,6 +245,9 @@ max
 <th style="text-align:left;">
 paramDesc
 </th>
+<th style="text-align:left;">
+cacheKey
+</th>
 </tr></thead>
 <tbody>
 <tr>
@@ -252,6 +269,9 @@ NA
 <td style="text-align:left;">
 Algorithm used to fit the models; only <code>xgboost</code> is supported. Must agree with the value in the other fireSense modules.
 </td>
+<td style="text-align:left;">
+TRUE
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -271,6 +291,9 @@ NA
 </td>
 <td style="text-align:left;">
 Rescale the covariates before predicting? With <code>xgboost</code> they are standardized with <code><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale()</a></code>. Must agree with the value in the other fireSense modules.
+</td>
+<td style="text-align:left;">
+TRUE
 </td>
 </tr>
 <tr>
@@ -292,6 +315,9 @@ NA
 <td style="text-align:left;">
 Time of the first prediction.
 </td>
+<td style="text-align:left;">
+TRUE
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -311,6 +337,9 @@ NA
 </td>
 <td style="text-align:left;">
 Interval between predictions, in years. <code>NA</code> predicts once.
+</td>
+<td style="text-align:left;">
+TRUE
 </td>
 </tr>
 <tr>
@@ -332,6 +361,9 @@ NA
 <td style="text-align:left;">
 Time of the <code>save</code> event, which does nothing. <code>NA</code> means never.
 </td>
+<td style="text-align:left;">
+TRUE
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -351,6 +383,9 @@ NA
 </td>
 <td style="text-align:left;">
 If not <code>NA</code>, the ignition probability raster is plotted each year.
+</td>
+<td style="text-align:left;">
+TRUE
 </td>
 </tr>
 <tr>
@@ -372,6 +407,9 @@ NA
 <td style="text-align:left;">
 Human-readable name for the study area used.
 </td>
+<td style="text-align:left;">
+TRUE
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -391,6 +429,9 @@ NA
 </td>
 <td style="text-align:left;">
 Should this entire module be run with caching activated? This is generally intended for data-type modules, where stochasticity and time are not relevant
+</td>
+<td style="text-align:left;">
+TRUE
 </td>
 </tr>
 </tbody>

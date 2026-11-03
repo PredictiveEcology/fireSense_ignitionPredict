@@ -75,6 +75,9 @@ defineModule(sim, list(
                    "`pixelID` is the cell index of `ignitionFitRTM`."
                  )
     ),
+    expectsInput("ignitionFitRTM", "SpatRaster",
+                 desc = paste("The coarse grid of `fireSense_igAndEscapePred_Covariates`: from `fireSense_dataPrepFit`,",
+                              "else `fireSense_dataPrepPredict`. The probability rasters are made on it.")),
   ),
   outputObjects = bindrows(
     createsOutput("fireSense_IgAndEscapeProbRas", "SpatRaster",

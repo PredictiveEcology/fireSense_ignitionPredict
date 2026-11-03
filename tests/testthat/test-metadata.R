@@ -22,6 +22,7 @@ test_that("inputs are the expected names and classes", {
       fireSense_igAndEscapePred_Covariates = "data.table",
       fireSense_IgnitionFitted             = "fireSense_IgnitionFit",
       fireSense_IgnitionFittedList         = "list",
+      ignitionFitRTM                       = "SpatRaster",
       rasterToMatchLargeELF                = "SpatRaster")
   )
 })

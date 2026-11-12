@@ -63,7 +63,7 @@ defineModule(sim, list(
     expectsInput("fireSense_EscapeFittedList", "list",
                  desc = "Only with several fitted ELFs: one `fireSense_EscapeFitted` per ELF, named as `fireSense_IgnitionFittedList`."),
     expectsInput("rasterToMatchLargeELF", "SpatRaster",
-                 desc = "Only with several fitted ELFs: each pixel's ELF (`ELFind`), from `fireSense_ELFs` with a `studyAreaLarge`."),
+                 desc = "Only with several fitted ELFs: each pixel's ELF (`ELFind`), from `fireSense_ELFs` with a `studyArea_fireSense`."),
     expectsInput("fireSense_IgnitionFitted", "fireSense_IgnitionFit",
                  desc = paste("Fitted ignition models (`$modelList$model`, one per fold) and `$modelList$fittingRes`,",
                               "from `fireSense_ignitionFit`."),

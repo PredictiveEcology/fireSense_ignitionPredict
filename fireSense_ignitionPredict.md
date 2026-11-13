@@ -81,7 +81,7 @@ Table \@ref(tab:moduleInputs-fireSense-ignitionPredict) shows the full list of m
   <tr>
    <td style="text-align:left;"> rasterToMatchLargeELF </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> Only with several fitted ELFs: each pixel's ELF (`ELFind`), from `fireSense_ELFs` with a `studyAreaLarge`. </td>
+   <td style="text-align:left;"> Only with several fitted ELFs: each pixel's ELF (`ELFind`), from `fireSense_ELFs` with a `studyArea_fireSense`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>

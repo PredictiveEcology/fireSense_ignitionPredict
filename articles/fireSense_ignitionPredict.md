@@ -1,7 +1,7 @@
 ---
 title: "fireSense_ignitionPredict Manual"
 subtitle: "v.1.2.0.9006"
-date: "Last updated: 2026-11-03"
+date: "Last updated: 2026-11-14"
 output:
   bookdown::html_document2:
     toc: true
@@ -83,7 +83,7 @@ Table \@ref(tab:moduleInputs-fireSense-ignitionPredict) shows the full list of m
   <tr>
    <td style="text-align:left;"> rasterToMatchLargeELF </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> Only with several fitted ELFs: each pixel's ELF (`ELFind`), from `fireSense_ELFs` with a `studyAreaLarge`. </td>
+   <td style="text-align:left;"> Only with several fitted ELFs: each pixel's ELF (`ELFind`), from `fireSense_ELFs` with a `studyArea_fireSense`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>

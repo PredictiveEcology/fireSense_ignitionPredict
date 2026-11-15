@@ -72,7 +72,7 @@
       <h1 data-toc-skip>fireSense_ignitionPredict Manual</h1>
             <h3 data-toc-skip class="subtitle">v.1.2.0.9006</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-11-14</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-11-15</h4>
       
 
       <div class="hidden name"><code>fireSense_ignitionPredict.Rmd</code></div>
@@ -493,7 +493,7 @@ fireSense_IgAndEscapeProbRas
 SpatRaster
 </td>
 <td style="text-align:left;">
-Two layers at the resolution of <code>ignitionFitRTM</code>, for every pixel with covariates: <code>ignitionProb</code>, the expected number of ignitions per pixel and year, and <code>escapeProb</code>, the expected number of escapes per pixel and year, given at least one ignition. Both are means of the fitted distributions in <code>fireSense_IgAndEscapeDistribution</code>, not probabilities. And two more, <code>ignitionYearSD</code> and <code>escapeYearSD</code>: the sd of the year effect of each pixel’s ELF’s ignition and escape fit (<code>modelList$yearSD</code>, 0 for a fit without one), with which <code>fireSense_burn</code> scales both means each year.
+Two layers at the resolution of <code>ignitionFitRTM</code>, for every pixel with covariates: <code>ignitionProb</code>, the expected number of ignitions per pixel and year, and <code>escapeProb</code>, the expected number of escapes per pixel and year, given at least one ignition. Both are means of the fitted distributions in <code>fireSense_IgAndEscapeDistribution</code>, not probabilities. And two more, <code>ignitionYearSD</code> and <code>escapeYearSD</code>: the sd of the year effect of each pixel’s ELF’s ignition and escape fit (<code>modelList$yearSD</code>, 0 for a fit without one), with which <code>fireSense_burn</code> scales both means each year. And, only when a fit has a fitted effect for the year <code>floor(time(sim))</code> (<code>modelList$yearEffects</code> of fireSense_ignitionFit), <code>ignitionYearEffect</code> and <code>escapeYearEffect</code>: that multiplier (<code>NA</code> in an ELF without one), and <code>ignitionYearEffectShape</code> and <code>escapeYearEffectShape</code>: the shape of its gamma posterior (<code>NA</code>: no uncertainty), which <code>fireSense_burn</code> uses instead of the draw with <code>yearEffects = "fitted"</code>.
 </td>
 </tr>
 <tr>

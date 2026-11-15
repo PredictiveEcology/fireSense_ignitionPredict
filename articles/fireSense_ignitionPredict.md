@@ -1,7 +1,7 @@
 ---
 title: "fireSense_ignitionPredict Manual"
 subtitle: "v.1.2.0.9006"
-date: "Last updated: 2026-11-14"
+date: "Last updated: 2026-11-15"
 output:
   bookdown::html_document2:
     toc: true
@@ -226,7 +226,7 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-ignit
   <tr>
    <td style="text-align:left;"> fireSense_IgAndEscapeProbRas </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> Two layers at the resolution of `ignitionFitRTM`, for every pixel with covariates: `ignitionProb`, the expected number of ignitions per pixel and year, and `escapeProb`, the expected number of escapes per pixel and year, given at least one ignition. Both are means of the fitted distributions in `fireSense_IgAndEscapeDistribution`, not probabilities. And two more, `ignitionYearSD` and `escapeYearSD`: the sd of the year effect of each pixel's ELF's ignition and escape fit (`modelList$yearSD`, 0 for a fit without one), with which `fireSense_burn` scales both means each year. </td>
+   <td style="text-align:left;"> Two layers at the resolution of `ignitionFitRTM`, for every pixel with covariates: `ignitionProb`, the expected number of ignitions per pixel and year, and `escapeProb`, the expected number of escapes per pixel and year, given at least one ignition. Both are means of the fitted distributions in `fireSense_IgAndEscapeDistribution`, not probabilities. And two more, `ignitionYearSD` and `escapeYearSD`: the sd of the year effect of each pixel's ELF's ignition and escape fit (`modelList$yearSD`, 0 for a fit without one), with which `fireSense_burn` scales both means each year. And, only when a fit has a fitted effect for the year `floor(time(sim))` (`modelList$yearEffects` of fireSense_ignitionFit), `ignitionYearEffect` and `escapeYearEffect`: that multiplier (`NA` in an ELF without one), and `ignitionYearEffectShape` and `escapeYearEffectShape`: the shape of its gamma posterior (`NA`: no uncertainty), which `fireSense_burn` uses instead of the draw with `yearEffects = "fitted"`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireSense_IgAndEscapeDistribution </td>

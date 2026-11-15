@@ -89,8 +89,9 @@ defineModule(sim, list(
                                "effect of each pixel's ELF's ignition and escape fit (`modelList$yearSD`, 0 for a fit without",
                                "one), with which `fireSense_burn` scales both means each year. And, only when a fit has a",
                                "fitted effect for the year `floor(time(sim))` (`modelList$yearEffects` of fireSense_ignitionFit),",
-                               "`ignitionYearEffect` and `escapeYearEffect`: that multiplier (`NA` in an ELF without one), which",
-                               "`fireSense_burn` uses instead of the draw with `yearEffects = \"fitted\"`.")
+                               "`ignitionYearEffect` and `escapeYearEffect`: that multiplier (`NA` in an ELF without one), and",
+                               "`ignitionYearEffectShape` and `escapeYearEffectShape`: the shape of its gamma posterior (`NA`: no",
+                               "uncertainty), which `fireSense_burn` uses instead of the draw with `yearEffects = \"fitted\"`.")
     ),
     createsOutput("fireSense_IgAndEscapeDistribution", "list",
                   desc = paste("`list(ignition = , escape = )`: the objective of the fitted models (e.g. `\"count:poisson\"`),",
@@ -165,7 +166,7 @@ IgnitionPredictRun <- function(sim) {
 
   # From here, it makes predictions from each KFold, then averages them to get the expected counts for
   #   each cell; same for Escape (expected escapes given an ignition), for every cell.
-  predsIgns <- predsEscs <- sdIgns <- sdEscs <- effIgns <- effEscs <- rep(NA_real_, NROW(igCov))
+  predsIgns <- predsEscs <- sdIgns <- sdEscs <- effIgns <- effEscs <- shapeIgns <- shapeEscs <- rep(NA_real_, NROW(igCov))
   year <- floor(time(sim) + 1e-9)  # a hindcast's reps are decimal years
   for (f in fits) {
     covsHere <- igCov[f$rows]
@@ -179,6 +180,8 @@ IgnitionPredictRun <- function(sim) {
     sdEscs[f$rows] <- yearSDOf(f$esc)
     effIgns[f$rows] <- yearEffectOf(f$ign, year)
     effEscs[f$rows] <- yearEffectOf(f$esc, year)
+    shapeIgns[f$rows] <- yearEffectOf(f$ign, year, "shape")
+    shapeEscs[f$rows] <- yearEffectOf(f$esc, year, "shape")
   }
 
   #for posterior analysis, and for fireSense_burn to draw from
@@ -193,11 +196,14 @@ IgnitionPredictRun <- function(sim) {
   names(sim$fireSense_IgAndEscapeProbRas) <- c("ignitionProb", "escapeProb", "ignitionYearSD", "escapeYearSD")
   ## the fitted effects of this year, only when a fit has one
   if (!all(is.na(c(effIgns, effEscs)))) {
-    effIgnRas <- effEscRas <- rast(sim$ignitionFitRTM)
-    effIgnRas[igCov$pixelID] <- effIgns
-    effEscRas[igCov$pixelID] <- effEscs
-    sim$fireSense_IgAndEscapeProbRas <- c(sim$fireSense_IgAndEscapeProbRas, effIgnRas, effEscRas)
-    names(sim$fireSense_IgAndEscapeProbRas)[5:6] <- c("ignitionYearEffect", "escapeYearEffect")
+    effLayers <- lapply(list(effIgns, effEscs, shapeIgns, shapeEscs), function(v) {
+      r <- rast(sim$ignitionFitRTM)
+      r[igCov$pixelID] <- v
+      r
+    })
+    sim$fireSense_IgAndEscapeProbRas <- c(sim$fireSense_IgAndEscapeProbRas, rast(effLayers))
+    names(sim$fireSense_IgAndEscapeProbRas)[5:8] <- c("ignitionYearEffect", "escapeYearEffect",
+                                                      "ignitionYearEffectShape", "escapeYearEffectShape")
   }
   
   if (!is.na(P(sim)$.saveInterval)) {
@@ -291,10 +297,12 @@ yearSDOf <- function(fit) {
 #'
 #' @param fit A `fireSense_IgnitionFitted` or `fireSense_EscapeFitted`.
 #' @param year The fire year, e.g. `floor(time(sim))`.
+#' @param column `"multiplier"` (the posterior mean) or `"shape"` (of its gamma posterior, which fireSense_burn
+#'   draws each rep's multiplier from).
 #' @return One number; `NA` for a year the fit has no effect for, or a fit stored without them.
-yearEffectOf <- function(fit, year) {
+yearEffectOf <- function(fit, year, column = "multiplier") {
   ye <- fit$modelList$yearEffects
-  if (is.null(ye)) NA_real_ else ye$multiplier[match(year, ye$year)]
+  if (is.null(ye) || is.null(ye[[column]])) NA_real_ else ye[[column]][match(year, ye$year)]
 }
 
 #' The objective the fitted models were fitted with

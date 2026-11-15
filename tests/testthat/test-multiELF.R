@@ -63,3 +63,14 @@ test_that("each ELF's pixels get that ELF's year-effect sd", {
   expect_equal(probVals(sim)[, "ignitionYearSD"], c(0.4, 0, 0.4, 0))
   expect_equal(probVals(sim)[, "escapeYearSD"], c(0, 1.1, 0, 1.1))
 })
+
+test_that("each ELF's pixels get that ELF's fitted year effect; an ELF without one is NA", {
+  o <- multiInputs()
+  o$fireSense_IgnitionFittedList$A$modelList$yearEffects <- data.frame(year = 2001, multiplier = 1.4, shape = 25)
+  o$fireSense_EscapeFittedList$B$modelList$yearEffects <- data.frame(year = 2001, multiplier = 0.7)
+  sim <- toyIgRun(o)
+  expect_equal(probVals(sim)[, "ignitionYearEffect"], c(1.4, NA, 1.4, NA))
+  expect_equal(probVals(sim)[, "escapeYearEffect"], c(NA, 0.7, NA, 0.7))
+  expect_equal(probVals(sim)[, "ignitionYearEffectShape"], c(25, NA, 25, NA))
+  expect_equal(probVals(sim)[, "escapeYearEffectShape"], rep(NA_real_, 4))   # B's fit has no shape column
+})

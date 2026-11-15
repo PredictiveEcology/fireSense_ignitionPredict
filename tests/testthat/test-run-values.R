@@ -106,3 +106,21 @@ test_that("each pixel gets its fits' year-effect sd; a fit stored without one gi
   ## the means are unchanged: the year effect is drawn in fireSense_burn
   expect_equal(probVals(sim)[, c("ignitionProb", "escapeProb")], probVals(toyIgRun(twoFolds()))[, c("ignitionProb", "escapeProb")])
 })
+
+test_that("a fit's fitted year effect of this year becomes a layer; without one the raster is unchanged", {
+  ins <- twoFolds()
+  ins$fireSense_IgnitionFitted$modelList$yearEffects <- data.frame(year = c(2000, 2001), multiplier = c(3, 1.7))
+  ins$fireSense_EscapeFitted$modelList$yearEffects <- data.frame(year = c(2000, 2001), multiplier = c(0.2, 0.6))
+  sim <- toyIgRun(ins)   # time 2001
+  expect_identical(names(sim$fireSense_IgAndEscapeProbRas),
+                   c("ignitionProb", "escapeProb", "ignitionYearSD", "escapeYearSD", "ignitionYearEffect", "escapeYearEffect"))
+  expect_equal(probVals(sim)[, "ignitionYearEffect"], rep(1.7, 4))
+  expect_equal(probVals(sim)[, "escapeYearEffect"], rep(0.6, 4))
+  ## the means are unchanged: fireSense_burn applies the effect
+  expect_equal(probVals(sim)[, c("ignitionProb", "escapeProb")], probVals(toyIgRun(twoFolds()))[, c("ignitionProb", "escapeProb")])
+  ## a year the fits have no effect for: no layers
+  ins$fireSense_IgnitionFitted$modelList$yearEffects$year <- c(1990, 1991)
+  ins$fireSense_EscapeFitted$modelList$yearEffects$year <- c(1990, 1991)
+  expect_identical(names(toyIgRun(ins)$fireSense_IgAndEscapeProbRas),
+                   c("ignitionProb", "escapeProb", "ignitionYearSD", "escapeYearSD"))
+})

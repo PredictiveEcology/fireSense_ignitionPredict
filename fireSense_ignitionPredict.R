@@ -20,7 +20,7 @@ defineModule(sim, list(
     "data.table", "magrittr", "terra", "xgboost (>= 3.0.0)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9104)"
+    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9167)" # 9167: foldModels(), foldMeanPrediction()
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),
   parameters = bindrows(
@@ -87,7 +87,10 @@ defineModule(sim, list(
                                "Both are means of the fitted distributions in `fireSense_IgAndEscapeDistribution`,",
                                "not probabilities. And two more, `ignitionYearSD` and `escapeYearSD`: the sd of the year",
                                "effect of each pixel's ELF's ignition and escape fit (`modelList$yearSD`, 0 for a fit without",
-                               "one), with which `fireSense_burn` scales both means each year.")
+                               "one), with which `fireSense_burn` scales both means each year. And, only when a fit has a",
+                               "fitted effect for the year `floor(time(sim))` (`modelList$yearEffects` of fireSense_ignitionFit),",
+                               "`ignitionYearEffect` and `escapeYearEffect`: that multiplier (`NA` in an ELF without one), which",
+                               "`fireSense_burn` uses instead of the draw with `yearEffects = \"fitted\"`.")
     ),
     createsOutput("fireSense_IgAndEscapeDistribution", "list",
                   desc = paste("`list(ignition = , escape = )`: the objective of the fitted models (e.g. `\"count:poisson\"`),",
@@ -137,7 +140,8 @@ doEvent.fireSense_ignitionPredict <- function(sim, eventTime, eventType, debug =
 #' Predict this year's expected ignitions and escapes
 #'
 #' Averages the per-fold predictions of the ignition models and of the escape models, for every coarse
-#' pixel with covariates, and gives each pixel its fits' year-effect sd (`yearSDOf()`). Nothing is
+#' pixel with covariates (`fireSenseUtils::foldMeanPrediction()`), and gives each pixel its fits' year-effect sd
+#' (`yearSDOf()`) and, when they have one, their fitted effect of this year (`yearEffectOf()`). Nothing is
 #' drawn: `fireSense_burn` draws ignitions and escapes from these means,
 #' with the distribution named in `fireSense_IgAndEscapeDistribution`.
 #'
@@ -161,17 +165,20 @@ IgnitionPredictRun <- function(sim) {
 
   # From here, it makes predictions from each KFold, then averages them to get the expected counts for
   #   each cell; same for Escape (expected escapes given an ignition), for every cell.
-  predsIgns <- predsEscs <- sdIgns <- sdEscs <- rep(NA_real_, NROW(igCov))
+  predsIgns <- predsEscs <- sdIgns <- sdEscs <- effIgns <- effEscs <- rep(NA_real_, NROW(igCov))
+  year <- floor(time(sim) + 1e-9)  # a hindcast's reps are decimal years
   for (f in fits) {
     covsHere <- igCov[f$rows]
     # The models were fitted on covariates standardized once, over all fitting years; a year's
     #   own mean and sd would make every year look average.
     covsIgn <- if (rescaleVars) scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted") else covsHere
     covsEsc <- if (rescaleVars) scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted") else covsHere
-    predsIgns[f$rows] <- foldMeanPrediction(f$ign, covsIgn)
-    predsEscs[f$rows] <- foldMeanPrediction(f$esc, covsEsc)
+    predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn)
+    predsEscs[f$rows] <- fireSenseUtils::foldMeanPrediction(f$esc, covsEsc)
     sdIgns[f$rows] <- yearSDOf(f$ign)
     sdEscs[f$rows] <- yearSDOf(f$esc)
+    effIgns[f$rows] <- yearEffectOf(f$ign, year)
+    effEscs[f$rows] <- yearEffectOf(f$esc, year)
   }
 
   #for posterior analysis, and for fireSense_burn to draw from
@@ -184,6 +191,14 @@ IgnitionPredictRun <- function(sim) {
   sdEscRas[igCov$pixelID] <- sdEscs
   sim$fireSense_IgAndEscapeProbRas <- c(igProbRas, escapeProbRas, sdIgnRas, sdEscRas)
   names(sim$fireSense_IgAndEscapeProbRas) <- c("ignitionProb", "escapeProb", "ignitionYearSD", "escapeYearSD")
+  ## the fitted effects of this year, only when a fit has one
+  if (!all(is.na(c(effIgns, effEscs)))) {
+    effIgnRas <- effEscRas <- rast(sim$ignitionFitRTM)
+    effIgnRas[igCov$pixelID] <- effIgns
+    effEscRas[igCov$pixelID] <- effEscs
+    sim$fireSense_IgAndEscapeProbRas <- c(sim$fireSense_IgAndEscapeProbRas, effIgnRas, effEscRas)
+    names(sim$fireSense_IgAndEscapeProbRas)[5:6] <- c("ignitionYearEffect", "escapeYearEffect")
+  }
   
   if (!is.na(P(sim)$.saveInterval)) {
     #TODO: implement proper plotting control
@@ -268,18 +283,18 @@ yearSDOf <- function(fit) {
   if (is.null(sd)) 0 else sd
 }
 
-## The K-fold models of one fit: those whose name contains "Fold"
-foldModels <- function(fit) {
-  mods <- fit$modelList$model
-  modsOnly <- mods[grep("Fold", names(mods))]
-  if (is.null(modsOnly) || !length(modsOnly)) stop("Not tested anymore")
-  modsOnly
-}
-
-## Mean over the K-fold models of one fit's predictions; a count is not below 0
-foldMeanPrediction <- function(fit, newdata) {
-  preds <- lapply(foldModels(fit), function(model) pmax(predict(model, newdata = newdata), 0))
-  rowMeans(do.call(cbind, preds))
+#' A fit's fitted year effect of one year
+#'
+#' `fireSense_ignitionFit` stores, with both processes fitted, `modelList$yearEffects`: one row per fit year,
+#' `year` and `multiplier`, the effect a hindcast of that year may use instead of a draw (`fireSense_burn`'s
+#' `yearEffects = "fitted"`).
+#'
+#' @param fit A `fireSense_IgnitionFitted` or `fireSense_EscapeFitted`.
+#' @param year The fire year, e.g. `floor(time(sim))`.
+#' @return One number; `NA` for a year the fit has no effect for, or a fit stored without them.
+yearEffectOf <- function(fit, year) {
+  ye <- fit$modelList$yearEffects
+  if (is.null(ye)) NA_real_ else ye$multiplier[match(year, ye$year)]
 }
 
 #' The objective the fitted models were fitted with
@@ -294,7 +309,7 @@ foldMeanPrediction <- function(fit, newdata) {
 fitObjective <- function(fits, process) {
   what <- c(ign = "ignition", esc = "escape")[[process]]
   perELF <- lapply(fits, function(f) {
-    obj <- fireSenseUtils::xgbObjective(foldModels(f[[process]]))
+    obj <- fireSenseUtils::xgbObjective(fireSenseUtils::foldModels(f[[process]]))
     if (anyNA(obj))
       stop("fireSense_ignitionPredict: cannot read the objective of a fitted ", what,
            " model (`fireSenseUtils::xgbObjective()` found none); fireSense_burn needs it to draw from the predictions")

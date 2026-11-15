@@ -1,5 +1,6 @@
 # fireSense_ignitionPredict (development version)
 
+* With a fit that has fitted year effects (`modelList$yearEffects`, from fireSense_ignitionFit), `fireSense_IgAndEscapeProbRas` has two more layers for the year `floor(time(sim))`, `ignitionYearEffect` and `escapeYearEffect` (`NA` in an ELF without one), for `fireSense_burn`'s `yearEffects = "fitted"` in hindcasts. Without them the raster is as before. `foldModels()` and `foldMeanPrediction()` moved to fireSenseUtils (same predictions), so fireSense_ignitionFit predicts exactly as this module does; a fit without fold models stops with "no fold models".
 * `ignitionFitRTM`, the coarse grid the probability rasters are made on, is declared as an input (it was read undeclared).
 
 - `fireSense_IgAndEscapeProbRas` has two more layers, `ignitionYearSD` and `escapeYearSD`: the sd of the year effect of each pixel's ELF's ignition and escape fit (`modelList$yearSD`, written by fireSense_ignitionFit; 0 for a fit stored without one, `yearSDOf()`). `fireSense_burn` draws one z per year, shared with spread, and multiplies both means by `exp(sd * z - sd^2 / 2)`. The `ignitionProb` and `escapeProb` layers are unchanged.

@@ -278,6 +278,9 @@ ignitionFitsByELF <- function(sim, pixelID) {
             rows = seq_along(pixelID), elf = "(one fit)"))
 }
 
+## the elements of a fit in `ignitionFitsByELF()`, and what they are called in messages
+fitProcesses <- c(ign = "ignition", esc = "escape")
+
 #' Stop if a stored fit cannot predict these covariates
 #'
 #' For every ELF and for ignition and escape, `fireSenseUtils::storedFitProblem()`: the fit's boosters must be
@@ -287,10 +290,10 @@ ignitionFitsByELF <- function(sim, pixelID) {
 #' @param covariates The covariates to predict, a `data.table`.
 #' @return `NULL`, invisibly; stops with the ELF, process and reason of the first fit that has a problem.
 stopIfStoredFitsProblem <- function(fits, covariates) {
-  for (f in fits) for (what in c("ignition", "escape")) {
-    problem <- fireSenseUtils::storedFitProblem(f[[c(ignition = "ign", escape = "esc")[[what]]]], covariates)
+  for (f in fits) for (process in names(fitProcesses)) {
+    problem <- fireSenseUtils::storedFitProblem(f[[process]], covariates)
     if (!is.null(problem))
-      stop("fireSense_ignitionPredict: the stored ", what, " fit of ELF ", f$elf,
+      stop("fireSense_ignitionPredict: the stored ", fitProcesses[[process]], " fit of ELF ", f$elf,
            " cannot predict these covariates: ", problem, ". Refit it (fireSense_ignitionFit `doFit = TRUE`) ",
            "or choose a ledger made with these covariates (`fitFileSuffix`).", call. = FALSE)
   }
@@ -335,7 +338,7 @@ yearEffectOf <- function(fit, year, column = "multiplier") {
 #'
 #' @return The objective, e.g. `"count:poisson"`.
 fitObjective <- function(fits, process) {
-  what <- c(ign = "ignition", esc = "escape")[[process]]
+  what <- fitProcesses[[process]]
   perELF <- lapply(fits, function(f) {
     obj <- fireSenseUtils::xgbObjective(fireSenseUtils::foldModels(f[[process]]))
     if (anyNA(obj))

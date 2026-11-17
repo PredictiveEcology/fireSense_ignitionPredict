@@ -58,4 +58,10 @@ test_that("a species the fit used and the vegetation lacks is 0 in raw units, th
   ## unscaled, it is the raw 0
   toyIgRun(ins, params = list(rescaleVars = FALSE))
   expect_equal(toyCalls("ign1")[[1]]$Pinu_con, rep(0, 4))
+  ## a species column the fit never saw is a rename, not an absence: nothing is added
+  ins2 <- ins
+  ins2$fireSense_igAndEscapePred_Covariates <- toyIgCovariates()
+  data.table::set(ins2$fireSense_igAndEscapePred_Covariates, NULL, "Pinu_new", 3)
+  toyIgRun(ins2, params = list(rescaleVars = FALSE))
+  expect_false("Pinu_con" %in% names(toyCalls("ign1")[[1]]))
 })

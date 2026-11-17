@@ -57,8 +57,8 @@ test_that("the distribution is read from the fitted models' objective", {
                    list(ignition = "count:poisson", escape = "count:poisson"))
   ins <- twoFolds()
   attr(ins$fireSense_EscapeFitted$modelList$model$Fold1, "params")$objective <- "reg:tweedie"
-  expect_identical(toyIgRun(ins)$fireSense_IgAndEscapeDistribution,
-                   list(ignition = "count:poisson", escape = "reg:tweedie"))
+  ## only Poisson fits can be stored fits that predict (fireSenseUtils::storedFitProblem())
+  expect_error(toyIgRun(ins), "escape fit of ELF \\(one fit\\).*reg:tweedie, not count:poisson")
 })
 
 test_that("an unreadable objective stops", {

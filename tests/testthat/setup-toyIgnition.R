@@ -27,8 +27,12 @@ predict.toyFold <- function(object, newdata, ...) {
 registerS3method("predict", "toyFold", predict.toyFold)
 
 ## `objective` is what a reloaded xgboost model keeps in `attr(, "params")$objective`; both fitted processes are Poisson counts
-toyFold <- function(fun, label, objective = "count:poisson")
-  structure(list(fun = fun, label = label), params = list(objective = objective), class = "toyFold")
+## `features` are the feature names a real booster stores (`variable.names()`); NULL stands for any
+toyFold <- function(fun, label, objective = "count:poisson", features = NULL)
+  structure(list(fun = fun, label = label, features = features), params = list(objective = objective),
+            class = "toyFold")
+variable.names.toyFold <- function(object, ...) object$features
+registerS3method("variable.names", "toyFold", variable.names.toyFold)
 
 ## calls logged for one model label, in call order
 toyCalls <- function(label) {

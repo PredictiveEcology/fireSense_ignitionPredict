@@ -20,7 +20,7 @@ defineModule(sim, list(
     "data.table", "magrittr", "terra", "xgboost (>= 3.0.0)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9168)" # 9168: foldModels(), foldMeanPrediction()
+    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9177)" # 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),
   parameters = bindrows(
@@ -163,6 +163,7 @@ IgnitionPredictRun <- function(sim) {
   fits <- ignitionFitsByELF(sim, igCov$pixelID)
   sim$fireSense_IgAndEscapeDistribution <- list(ignition = fitObjective(fits, "ign"),
                                                 escape = fitObjective(fits, "esc"))
+  stopIfStoredFitsProblem(fits, igCov)
 
   # From here, it makes predictions from each KFold, then averages them to get the expected counts for
   #   each cell; same for Escape (expected escapes given an ignition), for every cell.
@@ -275,6 +276,25 @@ ignitionFitsByELF <- function(sim, pixelID) {
   }
   list(list(ign = sim$fireSense_IgnitionFitted, esc = sim$fireSense_EscapeFitted,
             rows = seq_along(pixelID), elf = "(one fit)"))
+}
+
+#' Stop if a stored fit cannot predict these covariates
+#'
+#' For every ELF and for ignition and escape, `fireSenseUtils::storedFitProblem()`: the fit's boosters must be
+#' Poisson counts and use only features among the covariates to predict (scaling does not change their names).
+#'
+#' @param fits The result of `ignitionFitsByELF()`.
+#' @param covariates The covariates to predict, a `data.table`.
+#' @return `NULL`, invisibly; stops with the ELF, process and reason of the first fit that has a problem.
+stopIfStoredFitsProblem <- function(fits, covariates) {
+  for (f in fits) for (what in c("ignition", "escape")) {
+    problem <- fireSenseUtils::storedFitProblem(f[[c(ignition = "ign", escape = "esc")[[what]]]], covariates)
+    if (!is.null(problem))
+      stop("fireSense_ignitionPredict: the stored ", what, " fit of ELF ", f$elf,
+           " cannot predict these covariates: ", problem, ". Refit it (fireSense_ignitionFit `doFit = TRUE`) ",
+           "or choose a ledger made with these covariates (`fitFileSuffix`).", call. = FALSE)
+  }
+  invisible(NULL)
 }
 
 #' The sd of a fit's year effect

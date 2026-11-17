@@ -74,3 +74,10 @@ test_that("each ELF's pixels get that ELF's fitted year effect; an ELF without o
   expect_equal(probVals(sim)[, "ignitionYearEffectShape"], c(25, NA, 25, NA))
   expect_equal(probVals(sim)[, "escapeYearEffectShape"], rep(NA_real_, 4))   # B's fit has no shape column
 })
+
+test_that("each ELF's pixels get that ELF's escape calibration", {
+  base <- probVals(toyIgRun(multiInputs()))[, "escapeProb"]
+  o <- multiInputs()
+  o$fireSense_EscapeFittedList$B$modelList$escapeCalibration <- 2     # A's escape fit has none: 1
+  expect_equal(probVals(toyIgRun(o))[, "escapeProb"], base * c(1, 2, 1, 2))
+})

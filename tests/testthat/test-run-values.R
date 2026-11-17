@@ -129,3 +129,27 @@ test_that("a fit's fitted year effect of this year becomes a layer; without one 
   expect_identical(names(toyIgRun(ins)$fireSense_IgAndEscapeProbRas),
                    c("ignitionProb", "escapeProb", "ignitionYearSD", "escapeYearSD"))
 })
+
+test_that("the escape mean is multiplied by the escape fit's calibration; a fit stored without one gives 1", {
+  base <- probVals(toyIgRun(twoFolds()))
+  ins <- twoFolds()
+  ins$fireSense_EscapeFitted$modelList$escapeCalibration <- 1.25
+  sim <- toyIgRun(ins)
+  expect_equal(probVals(sim)[, "escapeProb"], base[, "escapeProb"] * 1.25)
+  ## ignitions are not calibrated
+  expect_equal(probVals(sim)[, "ignitionProb"], base[, "ignitionProb"])
+  ## a calibration on the ignition fit is not read
+  ins <- twoFolds()
+  ins$fireSense_IgnitionFitted$modelList$escapeCalibration <- 3
+  expect_equal(probVals(toyIgRun(ins))[, "escapeProb"], base[, "escapeProb"])
+})
+
+test_that("with the calibration, the escape chance of an ignition stays capped at 1 in the draw", {
+  ## fireSense_burn draws escapes with escapeProbPerIgnition(escapeProb, ignitionProb): c acts before the cap
+  ins <- twoFolds()
+  ins$fireSense_EscapeFitted$modelList$escapeCalibration <- 50
+  vals <- probVals(toyIgRun(ins))
+  q <- fireSenseUtils::escapeProbPerIgnition(vals[, "escapeProb"], vals[, "ignitionProb"])
+  expect_true(all(q <= 1, na.rm = TRUE))
+  expect_equal(max(q, na.rm = TRUE), 1)
+})

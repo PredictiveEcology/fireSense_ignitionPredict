@@ -83,7 +83,8 @@ defineModule(sim, list(
     createsOutput("fireSense_IgAndEscapeProbRas", "SpatRaster",
                   desc = paste("Two layers at the resolution of `ignitionFitRTM`, for every pixel with covariates:",
                                "`ignitionProb`, the expected number of ignitions per pixel and year, and `escapeProb`,",
-                               "the expected number of escapes per pixel and year, given at least one ignition.",
+                               "the expected number of escapes per pixel and year, given at least one ignition, times the",
+                               "escape fit's calibration (`modelList$escapeCalibration`; 1 if the fit has none).",
                                "Both are means of the fitted distributions in `fireSense_IgAndEscapeDistribution`,",
                                "not probabilities. And two more, `ignitionYearSD` and `escapeYearSD`: the sd of the year",
                                "effect of each pixel's ELF's ignition and escape fit (`modelList$yearSD`, 0 for a fit without",
@@ -141,7 +142,8 @@ doEvent.fireSense_ignitionPredict <- function(sim, eventTime, eventType, debug =
 #' Predict this year's expected ignitions and escapes
 #'
 #' Averages the per-fold predictions of the ignition models and of the escape models, for every coarse
-#' pixel with covariates (`fireSenseUtils::foldMeanPrediction()`), and gives each pixel its fits' year-effect sd
+#' pixel with covariates (`fireSenseUtils::foldMeanPrediction()`; the escape mean times the escape fit's calibration,
+#' `escapeCalibrationOf()`), and gives each pixel its fits' year-effect sd
 #' (`yearSDOf()`) and, when they have one, their fitted effect of this year (`yearEffectOf()`). Nothing is
 #' drawn: `fireSense_burn` draws ignitions and escapes from these means,
 #' with the distribution named in `fireSense_IgAndEscapeDistribution`.
@@ -175,7 +177,7 @@ IgnitionPredictRun <- function(sim) {
     covsIgn <- if (rescaleVars) scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted") else covsHere
     covsEsc <- if (rescaleVars) scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted") else covsHere
     predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn)
-    predsEscs[f$rows] <- fireSenseUtils::foldMeanPrediction(f$esc, covsEsc)
+    predsEscs[f$rows] <- fireSenseUtils::foldMeanPrediction(f$esc, covsEsc) * escapeCalibrationOf(f$esc)
     sdIgns[f$rows] <- yearSDOf(f$ign)
     sdEscs[f$rows] <- yearSDOf(f$esc)
     effIgns[f$rows] <- yearEffectOf(f$ign, year)
@@ -287,6 +289,22 @@ ignitionFitsByELF <- function(sim, pixelID) {
 yearSDOf <- function(fit) {
   sd <- fit$modelList$yearSD
   if (is.null(sd)) 0 else sd
+}
+
+#' The calibration of a fit's escape mean
+#'
+#' `fireSense_ignitionFit` stores, with both processes fitted, `modelList$escapeCalibration` in the escape fit: the
+#' factor `c` at which the ignition model's own ignitions expect the observed escapes (`fittedYearEffects()`). The
+#' escape model is fitted on the observed ignitions, but `fireSense_burn` draws ignitions where the ignition model
+#' puts them. `c` multiplies the escape mean here, so `fireSense_burn`'s chance that an ignition escapes,
+#' `fireSenseUtils::escapeProbPerIgnition(c * escapeMean, ignitionMean)`, is capped at 1 after it (`c` is applied
+#' before the cap: where the cap binds, `c` adds nothing). A fit stored before it has none, which is 1.
+#'
+#' @param fit A `fireSense_EscapeFitted`.
+#' @return One number.
+escapeCalibrationOf <- function(fit) {
+  cal <- fit$modelList$escapeCalibration
+  if (is.null(cal)) 1 else cal
 }
 
 #' A fit's fitted year effect of one year

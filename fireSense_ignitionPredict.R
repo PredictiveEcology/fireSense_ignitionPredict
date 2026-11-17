@@ -172,8 +172,11 @@ IgnitionPredictRun <- function(sim) {
     covsHere <- igCov[f$rows]
     # The models were fitted on covariates standardized once, over all fitting years; a year's
     #   own mean and sd would make every year look average.
-    covsIgn <- if (rescaleVars) scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted") else covsHere
-    covsEsc <- if (rescaleVars) scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted") else covsHere
+    ## a species the vegetation lacks has no biomass: 0 in raw units, so before any rescaling, as in the fit
+    covsIgn <- fireSenseUtils::addAbsentSpeciesCols(covsHere, fireSenseUtils::foldFeatureNames(f$ign))
+    covsEsc <- fireSenseUtils::addAbsentSpeciesCols(covsHere, fireSenseUtils::foldFeatureNames(f$esc))
+    covsIgn <- if (rescaleVars) scaleAsFit(covsIgn, f$ign$scaleData, "fireSense_IgnitionFitted") else covsIgn
+    covsEsc <- if (rescaleVars) scaleAsFit(covsEsc, f$esc$scaleData, "fireSense_EscapeFitted") else covsEsc
     predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn)
     predsEscs[f$rows] <- fireSenseUtils::foldMeanPrediction(f$esc, covsEsc)
     sdIgns[f$rows] <- yearSDOf(f$ign)

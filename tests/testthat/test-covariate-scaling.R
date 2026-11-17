@@ -39,3 +39,23 @@ test_that("covariates are standardised with the FIT's centre and scale", {
   expect_equal(seen$cool$youngAge, c(-1, -0.5, 0, 1))
   expect_equal(seen$cool$year, rep(0.1, 4))
 })
+
+test_that("a species the fit used and the vegetation lacks is 0 in raw units, then standardised with the fit's centre and scale", {
+  ## the covariates have no Pinu_con column: the species is absent, so its biomass is 0. The fit standardised
+  ## Pinu_con with centre 10 and scale 5, so the model must see (0 - 10) / 5 = -2, not a missing column.
+  variable.names.toyFold <- function(object, ...) object$features
+  registerS3method("variable.names", "toyFold", variable.names.toyFold)
+  scaleData <- list(`scaled:center` = c(MDC = 100, Pinu_con = 10, youngAge = 0.5, year = 2000),
+                    `scaled:scale`  = c(MDC = 50, Pinu_con = 5, youngAge = 0.5, year = 10))
+  ins <- oneFold(toyIgCovariates())
+  for (nm in c("fireSense_IgnitionFitted", "fireSense_EscapeFitted")) {
+    ins[[nm]]$modelList$model$Fold1$features <- c("MDC", "Pinu_con", "youngAge")
+    ins[[nm]]$scaleData <- scaleData
+  }
+  toyIgRun(ins, params = list(rescaleVars = TRUE))
+  expect_equal(toyCalls("ign1")[[1]]$Pinu_con, rep(-2, 4))
+  expect_equal(toyCalls("esc1")[[1]]$Pinu_con, rep(-2, 4))
+  ## unscaled, it is the raw 0
+  toyIgRun(ins, params = list(rescaleVars = FALSE))
+  expect_equal(toyCalls("ign1")[[1]]$Pinu_con, rep(0, 4))
+})

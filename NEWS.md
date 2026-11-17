@@ -1,5 +1,6 @@
 # fireSense_ignitionPredict (development version)
 
+* A species covariate the fitted models used but this run's covariates lack (the species is absent from the vegetation) is added as 0 before the covariates are standardised, instead of `predict()` failing on the missing column (`fireSenseUtils::addAbsentSpeciesCols()`). Any other missing feature still fails. Needs the new fireSenseUtils function (`Depends-on: PredictiveEcology/fireSenseUtils`; set the `reqdPkgs` floor after it merges).
 * With a fit that has fitted year effects (`modelList$yearEffects`, from fireSense_ignitionFit), `fireSense_IgAndEscapeProbRas` has two more layers for the year `floor(time(sim))`, `ignitionYearEffect` and `escapeYearEffect` (`NA` in an ELF without one) and `ignitionYearEffectShape` and `escapeYearEffectShape` (the shape of their gamma posteriors), for `fireSense_burn`'s `yearEffects = "fitted"` in hindcasts. Without them the raster is as before. `foldModels()` and `foldMeanPrediction()` moved to fireSenseUtils (same predictions), so fireSense_ignitionFit predicts exactly as this module does; a fit without fold models stops with "no fold models".
 * `ignitionFitRTM`, the coarse grid the probability rasters are made on, is declared as an input (it was read undeclared).
 

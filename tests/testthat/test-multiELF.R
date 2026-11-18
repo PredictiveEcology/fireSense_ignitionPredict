@@ -78,7 +78,7 @@ test_that("each ELF's pixels get that ELF's fitted year effect; an ELF without o
 test_that("a stored fit with features the covariates lack stops, naming its ELF, process and the features", {
   o <- multiInputs()
   o$fireSense_EscapeFittedList$B$modelList$model$Fold1$features <- c("MDC", "nonexistentCov")
-  expect_error(toyIgRun(o), "escape fit of ELF B.*nonexistentCov.*doFit = TRUE.*fitFileSuffix")
+  expect_error(toyIgRun(o), "escape fit of ELF B.*nonexistentCov.*doFit = TRUE.*ignitionFitFilename")
   o <- multiInputs()
   o$fireSense_IgnitionFittedList$A$modelList$model$Fold1$features <- "gone"
   expect_error(toyIgRun(o), "ignition fit of ELF A.*gone")

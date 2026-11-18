@@ -294,7 +294,7 @@ stopIfStoredFitsProblem <- function(fits, covariates) {
     if (!is.null(problem))
       stop("fireSense_ignitionPredict: the stored ", fitProcesses[[process]], " fit of ELF ", f$elf,
            " cannot predict these covariates: ", problem, ". Refit it (fireSense_ignitionFit `doFit = TRUE`) ",
-           "or choose a ledger made with these covariates (`fitFileSuffix`).", call. = FALSE)
+           "or name a ledger file made with these covariates (`ignitionFitFilename`).", call. = FALSE)
   }
   invisible(NULL)
 }

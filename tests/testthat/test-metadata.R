@@ -51,10 +51,10 @@ paramTable <- function(md) {
 test_that("parameters have the expected names, classes and defaults", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
   expected <- data.frame(
-    class   = c("numeric", "numeric", "numeric", "numeric", "character", "logical", "character", "logical"),
+    class   = c("character", "numeric", "numeric", "numeric", "character", "logical", "character", "logical"),
     ## .runInitialTime defaults to start(sim), which is 0 when only metadata is parsed
-    default = c("0", "1", "NA", "NA", "NA", "FALSE", "\"xgboost\"", "TRUE"),
-    row.names = c(".runInitialTime", ".runInterval", ".saveInitialTime", ".saveInterval", ".studyAreaName", ".useCache",
+    default = c("\"screen\"", "0", "1", "NA", "NA", "FALSE", "\"xgboost\"", "TRUE"),
+    row.names = c(".plots", ".runInitialTime", ".runInterval", ".saveInitialTime", ".studyAreaName", ".useCache",
                   "modelAlgorithm", "rescaleVars")
   )
   expect_identical(paramTable(md), expected)

@@ -38,7 +38,7 @@ test_that("the save event says it does nothing, and changes nothing", {
   ins <- toyIgInputs(list(byPixel(c(0, 3, 0, 2))), list(constant(0.5)))
   without <- toyIgRun(ins, times = list(start = 2001, end = 2002))
   expect_message(
-    with <- toyIgRun(ins, params = list(.saveInitialTime = 2001, .saveInterval = 1),
+    with <- toyIgRun(ins, params = list(.saveInitialTime = 2001),
                      times = list(start = 2001, end = 2002)),
     "`save` event does nothing")
   ## it ran once and did not reschedule itself
@@ -55,4 +55,15 @@ test_that("nothing is predicted before the first run event", {
                   times = list(start = 2001, end = 2002))
   expect_null(sim$fireSense_IgAndEscapeProbRas)
   expect_null(sim$fireSense_IgAndEscapeDistribution)
+})
+
+test_that("`.plots` saves the ignition probability map each run, and NA plots nothing (default: screen)", {
+  ## The plot was gated on `.saveInterval`, not `.plots`, so `.plots = "png"` (e.g. from .globals) drew nothing
+  ins <- toyIgInputs(list(byPixel(c(0, 3, 0, 2))), list(constant(0.5)))
+  withPng <- toyIgRun(ins, params = list(.plots = "png"), times = list(start = 2001, end = 2002))
+  pngs <- SpaDES.core::outputs(withPng)$file
+  expect_true(any(grepl("IgnitionProbability_yr2001", pngs)))
+  expect_true(all(file.exists(pngs[grepl("IgnitionProbability", pngs)])))
+  without <- toyIgRun(ins, params = list(.plots = NA), times = list(start = 2001, end = 2002))
+  expect_false(any(grepl("IgnitionProbability", SpaDES.core::outputs(without)$file)))
 })

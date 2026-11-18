@@ -57,13 +57,13 @@ test_that("nothing is predicted before the first run event", {
   expect_null(sim$fireSense_IgAndEscapeDistribution)
 })
 
-test_that("`.plots` saves the ignition probability map each run, and NA plots nothing (default: screen)", {
+test_that("`.plots` saves the ignition and escape probability maps each run, and NA plots nothing (default: screen)", {
   ## The plot was gated on `.saveInterval`, not `.plots`, so `.plots = "png"` (e.g. from .globals) drew nothing
   ins <- toyIgInputs(list(byPixel(c(0, 3, 0, 2))), list(constant(0.5)))
   withPng <- toyIgRun(ins, params = list(.plots = "png"), times = list(start = 2001, end = 2002))
   pngs <- SpaDES.core::outputs(withPng)$file
-  expect_true(any(grepl("IgnitionProbability_yr2001", pngs)))
-  expect_true(all(file.exists(pngs[grepl("IgnitionProbability", pngs)])))
+  expect_true(any(grepl("IgnitionEscapeProbability_yr2001", pngs)))
+  expect_true(all(file.exists(pngs[grepl("IgnitionEscapeProbability", pngs)])))
   without <- toyIgRun(ins, params = list(.plots = NA), times = list(start = 2001, end = 2002))
-  expect_false(any(grepl("IgnitionProbability", SpaDES.core::outputs(without)$file)))
+  expect_false(any(grepl("IgnitionEscapeProbability", SpaDES.core::outputs(without)$file)))
 })

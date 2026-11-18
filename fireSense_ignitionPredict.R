@@ -40,8 +40,8 @@ defineModule(sim, list(
                     desc = "Time of the `save` event, which does nothing. `NA` means never."
     ),
     defineParameter(".plots", "character", "screen", NA, NA,
-                    desc = paste("Passed to `types` in `Plots()`, e.g. \"screen\" (default), \"png\": the ignition probability",
-                                 "raster is plotted each `run`. `NA` or `NULL`: no plots.")
+                    desc = paste("Passed to `types` in `Plots()`, e.g. \"screen\" (default), \"png\": the ignition and escape",
+                                 "probability maps are plotted each `run`. `NA` or `NULL`: no plots.")
     ),
     defineParameter(".studyAreaName", "character", NA, NA, NA,
                     "Human-readable name for the study area used."),
@@ -208,8 +208,10 @@ IgnitionPredictRun <- function(sim) {
                                                       "ignitionYearEffectShape", "escapeYearEffectShape")
   }
   
+  ## the year's ignition and escape probabilities, side by side
   if (anyPlotting(Par$.plots))
-    Plots(igProbRas, types = Par$.plots, filename = paste0("IgnitionProbability_yr", time(sim)))
+    Plots(sim$fireSense_IgAndEscapeProbRas[[c("ignitionProb", "escapeProb")]], types = Par$.plots,
+          filename = paste0("IgnitionEscapeProbability_yr", time(sim)))
 
   return(invisible(sim))
 }

@@ -170,12 +170,12 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> .saveInterval </td>
-   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> .plots </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> screen </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> If not `NA`, the ignition probability raster is plotted each year. </td>
+   <td style="text-align:left;"> Passed to `types` in `Plots()`, e.g. "screen" (default), "png": the ignition probability raster is plotted each `run`. `NA` or `NULL`: no plots. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>

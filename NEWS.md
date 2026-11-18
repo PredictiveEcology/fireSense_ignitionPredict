@@ -1,5 +1,6 @@
 # fireSense_ignitionPredict (development version)
 
+* Before predicting, every stored ignition and escape fit (each ELF's, with several) is checked against the covariates to predict (`fireSenseUtils::storedFitProblem()`): a fit that is not Poisson or uses features the covariates lack stops the run, naming the ELF, process and features, and saying to refit or to choose another ledger (`fitFileSuffix`). Needs fireSenseUtils (>= 0.2.3.9177).
 * With a fit that has fitted year effects (`modelList$yearEffects`, from fireSense_ignitionFit), `fireSense_IgAndEscapeProbRas` has two more layers for the year `floor(time(sim))`, `ignitionYearEffect` and `escapeYearEffect` (`NA` in an ELF without one) and `ignitionYearEffectShape` and `escapeYearEffectShape` (the shape of their gamma posteriors), for `fireSense_burn`'s `yearEffects = "fitted"` in hindcasts. Without them the raster is as before. `foldModels()` and `foldMeanPrediction()` moved to fireSenseUtils (same predictions), so fireSense_ignitionFit predicts exactly as this module does; a fit without fold models stops with "no fold models".
 * `ignitionFitRTM`, the coarse grid the probability rasters are made on, is declared as an input (it was read undeclared).
 

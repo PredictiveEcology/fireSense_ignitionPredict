@@ -74,3 +74,24 @@ test_that("each ELF's pixels get that ELF's fitted year effect; an ELF without o
   expect_equal(probVals(sim)[, "ignitionYearEffectShape"], c(25, NA, 25, NA))
   expect_equal(probVals(sim)[, "escapeYearEffectShape"], rep(NA_real_, 4))   # B's fit has no shape column
 })
+
+test_that("a stored fit with features the covariates lack stops, naming its ELF, process and the features", {
+  o <- multiInputs()
+  o$fireSense_EscapeFittedList$B$modelList$model$Fold1$features <- c("MDC", "nonexistentCov")
+  expect_error(toyIgRun(o), "escape fit of ELF B.*nonexistentCov.*doFit = TRUE.*fitFileSuffix")
+  o <- multiInputs()
+  o$fireSense_IgnitionFittedList$A$modelList$model$Fold1$features <- "gone"
+  expect_error(toyIgRun(o), "ignition fit of ELF A.*gone")
+})
+
+test_that("a stored fit whose features are all among the covariates predicts as before", {
+  o <- multiInputs()
+  o$fireSense_IgnitionFittedList$A$modelList$model$Fold1$features <- c("MDC", "youngAge")
+  expect_equal(probVals(toyIgRun(o))[, "ignitionProb"], c(2, 5, 2, 5))
+})
+
+test_that("with one fit, a stored fit missing features stops, naming the fit", {
+  o <- toyIgInputs(list(constant(1)), list(constant(1)))
+  o$fireSense_IgnitionFitted$modelList$model$Fold1$features <- c("MDC", "nonexistentCov")
+  expect_error(toyIgRun(o), "ignition fit of ELF \\(one fit\\).*nonexistentCov")
+})

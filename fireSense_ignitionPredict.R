@@ -40,8 +40,9 @@ defineModule(sim, list(
                     desc = "Time of the `save` event, which does nothing. `NA` means never."
     ),
     defineParameter(".plots", "character", "screen", NA, NA,
-                    desc = paste("Passed to `types` in `Plots()`, e.g. \"screen\" (default), \"png\": the ignition probability",
-                                 "raster is plotted each `run`. `NA` or `NULL`: no plots.")
+                    desc = paste("Passed to `types` in `Plots()`, e.g. \"screen\" (default), \"png\": the ignition and escape",
+                                 "probability maps, and their product (the expected escaped fires per pixel), are plotted each `run`.",
+                                 "`NA` or `NULL`: no plots.")
     ),
     defineParameter(".studyAreaName", "character", NA, NA, NA,
                     "Human-readable name for the study area used."),
@@ -208,8 +209,16 @@ IgnitionPredictRun <- function(sim) {
                                                       "ignitionYearEffectShape", "escapeYearEffectShape")
   }
   
-  if (anyPlotting(Par$.plots))
-    Plots(igProbRas, types = Par$.plots, filename = paste0("IgnitionProbability_yr", time(sim)))
+  ## the year's ignition and escape probabilities, side by side, and their product: the expected number of escaped
+  ## fires starting in each pixel this year. Where a pixel burns also depends on spread from other pixels, which
+  ## only fireSense_burn's simulation gives.
+  if (anyPlotting(Par$.plots)) {
+    probs <- sim$fireSense_IgAndEscapeProbRas[[c("ignitionProb", "escapeProb")]]
+    expectedEscapes <- probs[["ignitionProb"]] * probs[["escapeProb"]]
+    names(expectedEscapes) <- "expectedEscapes"
+    Plots(c(probs, expectedEscapes), types = Par$.plots,
+          filename = paste0("IgnitionEscapeProbability_yr", time(sim)))
+  }
 
   return(invisible(sim))
 }

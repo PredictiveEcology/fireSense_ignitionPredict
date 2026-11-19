@@ -1,7 +1,7 @@
 ---
 title: "fireSense_ignitionPredict Manual"
 subtitle: "v.1.2.0.9007"
-date: "Last updated: 2026-11-18"
+date: "Last updated: 2026-11-19"
 output:
   bookdown::html_document2:
     toc: true
@@ -175,7 +175,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-ignit
    <td style="text-align:left;"> screen </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Passed to `types` in `Plots()`, e.g. "screen" (default), "png": the ignition probability raster is plotted each `run`. `NA` or `NULL`: no plots. </td>
+   <td style="text-align:left;"> Passed to `types` in `Plots()`, e.g. "screen" (default), "png": the ignition and escape probability maps, and their product (the expected escaped fires per pixel), are plotted each `run`. `NA` or `NULL`: no plots. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>

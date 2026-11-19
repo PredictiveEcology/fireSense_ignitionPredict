@@ -64,6 +64,11 @@ test_that("`.plots` saves the ignition and escape probability maps each run, and
   pngs <- SpaDES.core::outputs(withPng)$file
   expect_true(any(grepl("IgnitionEscapeProbability_yr2001", pngs)))
   expect_true(all(file.exists(pngs[grepl("IgnitionEscapeProbability", pngs)])))
+  pngSize <- function(f) {                       # width, height in pixels, from the PNG header
+    con <- file(f, "rb"); on.exit(close(con)); h <- readBin(con, "raw", 24L)
+    readBin(h[17:24], "integer", 2L, size = 4L, endian = "big")
+  }
+  expect_equal(pngSize(pngs[grepl("IgnitionEscapeProbability", pngs)][1]), c(1440L, 1152L))  # not png()'s 480 x 480
   without <- toyIgRun(ins, params = list(.plots = NA), times = list(start = 2001, end = 2002))
   expect_false(any(grepl("IgnitionEscapeProbability", SpaDES.core::outputs(without)$file)))
 })

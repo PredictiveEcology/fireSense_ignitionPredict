@@ -217,7 +217,8 @@ IgnitionPredictRun <- function(sim) {
     expectedEscapes <- probs[["ignitionProb"]] * probs[["escapeProb"]]
     names(expectedEscapes) <- "expectedEscapes"
     Plots(c(probs, expectedEscapes), types = Par$.plots,
-          filename = paste0("IgnitionEscapeProbability_yr", time(sim)))
+          filename = paste0("IgnitionEscapeProbability_yr", time(sim)),
+          deviceArgs = list(width = 10, height = 8, units = "in", res = 144))  # png() alone is 480 x 480 px
   }
 
   return(invisible(sim))

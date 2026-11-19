@@ -1,5 +1,6 @@
 # fireSense_ignitionPredict (development version)
 
+* The yearly ignition and escape probability map (`.plots = "png"`) is bigger. Its png is now 10 x 8 inches at 144 dpi (1440 x 1152 pixels), as fireSense_burn's; it was R's `png()` default of 480 x 480, which looked small in `SpaDES.shiny::shine()`.
 * The yearly map shows the escape probability beside the ignition probability (`IgnitionEscapeProbability_yr<year>`, was `IgnitionProbability_yr<year>`), both layers of `fireSense_IgAndEscapeProbRas`, and their product, the expected number of escaped fires starting in each pixel that year (`expectedEscapes`).
 * New parameter `.plots` (default `"screen"`): the ignition probability map is plotted each `run` with `Plots(types = .plots)`; `NA` or `NULL` for none. The plot was gated on `.saveInterval` instead, so `.plots` (e.g. `"png"` from `.globals`) drew and saved nothing. `.saveInterval`, used for nothing else, is removed.
 * Before predicting, every stored ignition and escape fit (each ELF's, with several) is checked against the covariates to predict (`fireSenseUtils::storedFitProblem()`): a fit that is not Poisson or uses features the covariates lack stops the run, naming the ELF, process and features, and saying to refit or to choose another ledger (`fitFileSuffix`). Needs fireSenseUtils (>= 0.2.3.9177).

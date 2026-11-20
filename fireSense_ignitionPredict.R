@@ -20,7 +20,7 @@ defineModule(sim, list(
     "data.table", "magrittr", "terra", "xgboost (>= 3.0.0)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9182)" # 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
+    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9184)" # 9184: yearClimateMeans(covariates, variable) unweighted, yearClimateMultiplier() norm; 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),
   parameters = bindrows(
@@ -154,17 +154,26 @@ doEvent.fireSense_ignitionPredict <- function(sim, eventTime, eventType, debug =
 #'
 #' @return The `simList`, invisibly, with `fireSense_IgAndEscapeProbRas` and `fireSense_IgAndEscapeDistribution`.
 IgnitionPredictRun <- function(sim) {
-  igCov <- copy(sim$fireSense_igAndEscapePred_Covariates)
+  igCovAll <- copy(sim$fireSense_igAndEscapePred_Covariates)
+  ## Only pixels with no NA in any covariate are predicted, but the year climate term averages its covariate over the
+  ## rows the fit's table would have (`fireSenseUtils::yearClimateMeans()`: only an NA in that covariate leaves a row
+  ## out), so the ELF assignment is made once on all rows and each fit keeps both its rows.
+  keep <- stats::complete.cases(igCovAll)
+  igCov <- igCovAll[keep]
 
-  igCov <- na.omit(igCov)
-  
   paramCheckOtherMods(sim, "modelAlgorithm")
   rescaleVars <- paramCheckOtherMods(sim, "rescaleVars")
   # The models were fitted on covariates standardized once, over all fitting years; a year's
   #   own mean and sd would make every year look average.
   ## The fitted models: one ignition and one escape fit, or one of each per fitted ELF (named by ELF), each
   ## applied to the coarse pixels of its own ELF (sim$rasterToMatchLargeELF).
-  fits <- ignitionFitsByELF(sim, igCov$pixelID)
+  fits <- ignitionFitsByELF(sim, igCovAll$pixelID)
+  newRow <- cumsum(keep)
+  fits <- lapply(fits, function(f) {
+    f$allRows <- f$rows                       # into the covariates before `na.omit()`
+    f$rows <- newRow[f$rows[keep[f$rows]]]    # into those predicted
+    f
+  })
   sim$fireSense_IgAndEscapeDistribution <- list(ignition = fitObjective(fits, "ign"),
                                                 escape = fitObjective(fits, "esc"))
   stopIfStoredFitsProblem(fits, igCov)
@@ -179,7 +188,7 @@ IgnitionPredictRun <- function(sim) {
     #   own mean and sd would make every year look average.
     covsIgn <- if (rescaleVars) scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted") else covsHere
     covsEsc <- if (rescaleVars) scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted") else covsHere
-    predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn) * yearClimateMultiplierOf(f$ign, covsHere)
+    predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn) * yearClimateMultiplierOf(f$ign, if (!is.null(f$ign$modelList$yearClimate)) igCovAll[f$allRows])
     predsEscs[f$rows] <- fireSenseUtils::foldMeanPrediction(f$esc, covsEsc)
     sdIgns[f$rows] <- yearSDOf(f$ign)
     sdEscs[f$rows] <- yearSDOf(f$esc)
@@ -325,18 +334,32 @@ yearSDOf <- function(fit) {
 
 #' The year climate multiplier of a fit's expected ignitions
 #'
-#' `fireSense_ignitionFit` stores `modelList$yearClimate` (`list(variable, center, scale, beta)`) with a year climate
-#' term; the multiplier is `fireSenseUtils::yearClimateMultiplier()` of this year's mean of the raw covariate over
-#' the fit's pixels. The fit standardised with the exposure-weighted mean over the core of its ELF; here it is the
-#' plain mean over the ELF's pixels. A fit without the term (older fits) gives 1.
+#' `fireSense_ignitionFit` stores `modelList$yearClimate` (`list(variable, center, scale, beta, norm)`) with a year
+#' climate term; the multiplier is `fireSenseUtils::yearClimateMultiplier()` of this year's mean of the raw covariate
+#' over the fit's pixels, `fireSenseUtils::yearClimateMeans()`, the same definition the fit used (unweighted mean over
+#' the rows with the variable and with core: it needs the `coreFraction` column `fireSense_dataPrepPredict` adds). A fit without the term (older fits) gives 1, and so does a year with no
+#' usable row, with a warning. Stops if the covariates hold more than one year, or lack the variable or `coreFraction`.
 #'
 #' @param fit A `fireSense_IgnitionFitted`.
-#' @param covariates The raw (not standardised) covariates of the fit's pixels.
+#' @param covariates The raw (not standardised) covariates of the fit's pixels, one year, before `na.omit()` (`f$allRows` of `IgnitionPredictRun()`); not used by a fit without the term.
 #' @return One number.
 yearClimateMultiplierOf <- function(fit, covariates) {
   yc <- fit$modelList$yearClimate
   if (is.null(yc)) return(1)
-  fireSenseUtils::yearClimateMultiplier(yc, mean(covariates[[fireSenseUtils::yearClimateColumn(yc$variable, names(covariates))]]))
+  if (is.null(covariates[[fireSenseUtils::coreFractionTxt]]))
+    stop("fireSense_ignitionPredict: the fit has a year climate term, which averages the core pixels, but the ",
+         "covariates to predict have no `", fireSenseUtils::coreFractionTxt, "` column; ",
+         "fireSense_dataPrepPredict adds it (fireSenseUtils >= 0.2.3.9184).", call. = FALSE)
+  m <- fireSenseUtils::yearClimateMeans(covariates, yc$variable)
+  if (nrow(m) > 1L)
+    stop("fireSense_ignitionPredict: the covariates to predict hold ", nrow(m), " years (", paste(m$year, collapse = ", "),
+         "), but the year climate term is of one year.", call. = FALSE)
+  if (nrow(m) == 0L || !is.finite(m$mean)) {
+    warning("fireSense_ignitionPredict: no ", yc$variable, " to give the year climate multiplier of this year's ",
+            "ignitions; it is 1.", call. = FALSE)
+    return(1)
+  }
+  fireSenseUtils::yearClimateMultiplier(yc, m$mean)
 }
 
 #' A fit's fitted year effect of one year

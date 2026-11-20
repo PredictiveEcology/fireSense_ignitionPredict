@@ -48,8 +48,9 @@ toyCoarse <- function() {
 
 ## one row per coarse cell, as fireSense_dataPrepPredict makes them
 toyIgCovariates <- function(MDC = c(100, 120, 140, 160), year = 2001) {
+  ## `coreFraction` is what fireSense_dataPrepPredict adds (an exposure, not a covariate)
   data.table::data.table(pixelID = 1:4, MDC = MDC, youngAge = c(0, 0.25, 0.5, 1),
-                         year = year)
+                         year = year, coreFraction = 1)
 }
 
 ## The centre and scale the fit standardised its covariates with, as fireSense_ignitionFit

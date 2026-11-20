@@ -27,3 +27,15 @@ test_that("xgboost folds with different objectives stop", {
   fits <- list(ledgerFit(realBooster(), realBooster("reg:squarederror")))
   expect_error(fitObjective(fits, "ign"), "different objectives: count:poisson, reg:squarederror")
 })
+
+test_that("real boosters predict covariates that carry coreFraction, which is not a feature, and the fit still stores it unscaled", {
+  skip_if_not_installed("xgboost")
+  fit <- ledgerFit(realBooster(), realBooster(seed = 2))$ign
+  covs <- data.frame(pixelID = 1:3, MDC = c(-1, 0, 1), youngAge = c(0, 1, 0), year = 2001)
+  withCore <- cbind(covs, coreFraction = c(1, 0.5, 0))
+  expect_equal(fireSenseUtils::foldMeanPrediction(fit, withCore), fireSenseUtils::foldMeanPrediction(fit, covs))
+  expect_null(fireSenseUtils::storedFitProblem(fit, withCore))
+  ## scaling the covariates as the fit did leaves coreFraction alone
+  sd <- toyScaleData()
+  expect_identical(scaleAsFit(data.table::as.data.table(withCore), sd, "fireSense_IgnitionFitted")$coreFraction, withCore$coreFraction)
+})

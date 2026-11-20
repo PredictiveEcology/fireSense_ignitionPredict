@@ -6,7 +6,7 @@ test_that("with rescaleVars = FALSE the models get the covariates exactly as sup
   covs <- toyIgCovariates()
   sim <- toyIgRun(oneFold(covs), params = list(rescaleVars = FALSE))
   nd <- toyCalls("ign1")[[1]]
-  expect_setequal(names(nd), c("pixelID", "MDC", "youngAge", "year"))
+  expect_setequal(names(nd), c("pixelID", "MDC", "youngAge", "year", "coreFraction"))
   expect_identical(nd$MDC, c(100, 120, 140, 160))
   expect_identical(nd$youngAge, c(0, 0.25, 0.5, 1))
   expect_identical(nd$year, rep(2001, 4))

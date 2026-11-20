@@ -95,3 +95,38 @@ test_that("with one fit, a stored fit missing features stops, naming the fit", {
   o$fireSense_IgnitionFitted$modelList$model$Fold1$features <- c("MDC", "nonexistentCov")
   expect_error(toyIgRun(o), "ignition fit of ELF \\(one fit\\).*nonexistentCov")
 })
+
+test_that("each ELF's fit applies its own year climate term, or none", {
+  ## A: pixels 1, 3 (MDC 100, 140: mean 120); B: pixels 2, 4 (MDC 120, 160: mean 140)
+  o <- multiInputs()
+  o$fireSense_IgnitionFittedList$A$modelList$yearClimate <- list(variable = "MDC", center = 100, scale = 10, beta = 0.5, norm = 1)
+  expect_equal(probVals(toyIgRun(o))[, "ignitionProb"], c(2 * exp(1), 5, 2 * exp(1), 5))     # B has none
+  o$fireSense_IgnitionFittedList$B$modelList$yearClimate <- list(variable = "MDC", center = 140, scale = 10, beta = 1, norm = 2)
+  expect_equal(probVals(toyIgRun(o))[, "ignitionProb"], c(2 * exp(1), 5 / 2, 2 * exp(1), 5 / 2))
+})
+
+test_that("with several ELFs the year mean is of each ELF's pixels, NA rows included", {
+  o <- multiInputs()
+  ## pixels 1, 3 are ELF A; 2, 4 are B. MDC 100, 140 (A) and 120, 160 (B); an NA in an unrelated column of pixel 3
+  o$fireSense_igAndEscapePred_Covariates <- toyIgCovariates(MDC = c(100, 120, 140, 160))
+  data.table::set(o$fireSense_igAndEscapePred_Covariates, NULL, "lightningDays", c(1, 1, NA, 1))
+  o$fireSense_IgnitionFittedList$A$modelList$yearClimate <- list(variable = "MDC", center = 100, scale = 10, beta = 0.5, norm = 1)
+  sim <- toyIgRun(o)
+  ## A's mean is over pixels 1 and 3 (120), not pixel 1 only (100): z = 2; pixel 3 is dropped (NA), pixel 1 predicted 2
+  expect_equal(unname(probVals(sim)[1, "ignitionProb"]), 2 * exp(0.5 * 2))
+})
+
+
+test_that("the ELF assignment (raster post-process) runs once per prediction, with or without a year climate term", {
+  calls <- function(o) {
+    n <- 0L
+    orig <- reproducible::postProcess
+    testthat::local_mocked_bindings(postProcess = function(...) { n <<- n + 1L; orig(...) }, .package = "reproducible")
+    toyIgRun(o)
+    n
+  }
+  o <- multiInputs()
+  expect_identical(calls(o), 1L)
+  o$fireSense_IgnitionFittedList$A$modelList$yearClimate <- list(variable = "MDC", center = 100, scale = 10, beta = 0.5, norm = 1)
+  expect_identical(calls(o), 1L)
+})

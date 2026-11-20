@@ -129,3 +129,28 @@ test_that("a fit's fitted year effect of this year becomes a layer; without one 
   expect_identical(names(toyIgRun(ins)$fireSense_IgAndEscapeProbRas),
                    c("ignitionProb", "escapeProb", "ignitionYearSD", "escapeYearSD"))
 })
+
+## the year climate term of the ignitions (fireSense_ignitionFit's `ignitionYearClimate`)
+withYearClimate <- function(ins, yc) {
+  ins$fireSense_IgnitionFitted$modelList$yearClimate <- yc
+  ins
+}
+toyClimate <- list(variable = "MDC", center = 130, scale = 20, beta = 0.5)
+
+test_that("a fit without a year climate term gives a multiplier of 1", {
+  expect_identical(yearClimateMultiplierOf(twoFolds()$fireSense_IgnitionFitted, toyIgCovariates()), 1)
+  expect_equal(probVals(toyIgRun(twoFolds()))[, "ignitionProb"], c(0, 3, 3, 0))
+})
+
+test_that("a drier year raises the expected ignitions by exp(beta * z), escapes untouched", {
+  ## the mean MDC of the toy year is 130 = the fit's centre: no change
+  expect_equal(probVals(toyIgRun(withYearClimate(twoFolds(), toyClimate)))[, "ignitionProb"], c(0, 3, 3, 0))
+  ## 20 drier: z = 1
+  dry <- twoFolds(covs = toyIgCovariates(MDC = c(100, 120, 140, 160) + 20))
+  sim <- toyIgRun(withYearClimate(dry, toyClimate))
+  expect_equal(probVals(sim)[, "ignitionProb"], c(0, 3, 3, 0) * exp(0.5))
+  expect_equal(probVals(sim)[, "escapeProb"], rep(1, 4))
+  ## beta 0 is no term
+  sim0 <- toyIgRun(withYearClimate(dry, modifyList(toyClimate, list(beta = 0))))
+  expect_equal(probVals(sim0)[, "ignitionProb"], c(0, 3, 3, 0))
+})

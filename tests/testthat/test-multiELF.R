@@ -116,3 +116,17 @@ test_that("with several ELFs the year mean is of each ELF's pixels, NA rows incl
   expect_equal(unname(probVals(sim)[1, "ignitionProb"]), 2 * exp(0.5 * 2))
 })
 
+
+test_that("the ELF assignment (raster post-process) runs once per prediction, with or without a year climate term", {
+  calls <- function(o) {
+    n <- 0L
+    orig <- reproducible::postProcess
+    testthat::local_mocked_bindings(postProcess = function(...) { n <<- n + 1L; orig(...) }, .package = "reproducible")
+    toyIgRun(o)
+    n
+  }
+  o <- multiInputs()
+  expect_identical(calls(o), 1L)
+  o$fireSense_IgnitionFittedList$A$modelList$yearClimate <- list(variable = "MDC", center = 100, scale = 10, beta = 0.5, norm = 1)
+  expect_identical(calls(o), 1L)
+})

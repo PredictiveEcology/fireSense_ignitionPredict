@@ -328,8 +328,8 @@ yearSDOf <- function(fit) {
 #' `fireSense_ignitionFit` stores `modelList$yearClimate` (`list(variable, center, scale, beta, norm)`) with a year
 #' climate term; the multiplier is `fireSenseUtils::yearClimateMultiplier()` of this year's mean of the raw covariate
 #' over the fit's pixels, `fireSenseUtils::yearClimateMeans()`, the same definition the fit used (unweighted mean over
-#' the rows with no `NA` and with core). A fit without the term (older fits) gives 1, and so does a year with no
-#' usable row, with a warning. Stops if the covariates hold more than one year, or lack the variable.
+#' the rows with the variable and with core: it needs the `coreFraction` column `fireSense_dataPrepPredict` adds). A fit without the term (older fits) gives 1, and so does a year with no
+#' usable row, with a warning. Stops if the covariates hold more than one year, or lack the variable or `coreFraction`.
 #'
 #' @param fit A `fireSense_IgnitionFitted`.
 #' @param covariates The raw (not standardised) covariates of the fit's pixels, one year.
@@ -337,6 +337,10 @@ yearSDOf <- function(fit) {
 yearClimateMultiplierOf <- function(fit, covariates) {
   yc <- fit$modelList$yearClimate
   if (is.null(yc)) return(1)
+  if (is.null(covariates[[fireSenseUtils::coreFractionTxt]]))
+    stop("fireSense_ignitionPredict: the fit has a year climate term, which averages the core pixels, but the ",
+         "covariates to predict have no `", fireSenseUtils::coreFractionTxt, "` column; ",
+         "fireSense_dataPrepPredict adds it (fireSenseUtils >= 0.2.3.9183).", call. = FALSE)
   m <- fireSenseUtils::yearClimateMeans(covariates, yc$variable)
   if (nrow(m) > 1L)
     stop("fireSense_ignitionPredict: the covariates to predict hold ", nrow(m), " years (", paste(m$year, collapse = ", "),

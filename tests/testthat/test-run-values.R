@@ -177,6 +177,13 @@ test_that("a stored variable missing from the covariates, or several years in th
   expect_no_error(toyIgRun(withYearClimate(twoFolds(covs = noYear), toyClimate)))
 })
 
+test_that("a fit with a year climate term and covariates without coreFraction stops with a clear message", {
+  noCore <- toyIgCovariates(); data.table::set(noCore, NULL, "coreFraction", NULL)
+  expect_error(toyIgRun(withYearClimate(twoFolds(covs = noCore), toyClimate)), "no `coreFraction` column")
+  ## a fit without the term does not need it
+  expect_no_error(toyIgRun(twoFolds(covs = noCore)))
+})
+
 test_that("a year with no usable covariate gives a multiplier of 1 and a warning", {
   expect_warning(m <- yearClimateMultiplierOf(withYearClimate(twoFolds(), toyClimate)$fireSense_IgnitionFitted,
                                               toyIgCovariates()[integer(0), , drop = FALSE]), "it is 1")

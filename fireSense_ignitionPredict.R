@@ -20,7 +20,7 @@ defineModule(sim, list(
     "data.table", "magrittr", "terra", "xgboost (>= 3.0.0)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9183)" # 9183: yearClimateMeans(covariates, variable) unweighted, yearClimateMultiplier() norm; 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
+    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9184)" # 9184: yearClimateMeans(covariates, variable) unweighted, yearClimateMultiplier() norm; 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),
   parameters = bindrows(
@@ -349,7 +349,7 @@ yearClimateMultiplierOf <- function(fit, covariates) {
   if (is.null(covariates[[fireSenseUtils::coreFractionTxt]]))
     stop("fireSense_ignitionPredict: the fit has a year climate term, which averages the core pixels, but the ",
          "covariates to predict have no `", fireSenseUtils::coreFractionTxt, "` column; ",
-         "fireSense_dataPrepPredict adds it (fireSenseUtils >= 0.2.3.9183).", call. = FALSE)
+         "fireSense_dataPrepPredict adds it (fireSenseUtils >= 0.2.3.9184).", call. = FALSE)
   m <- fireSenseUtils::yearClimateMeans(covariates, yc$variable)
   if (nrow(m) > 1L)
     stop("fireSense_ignitionPredict: the covariates to predict hold ", nrow(m), " years (", paste(m$year, collapse = ", "),

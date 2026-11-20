@@ -177,6 +177,13 @@ test_that("a stored variable missing from the covariates, or several years in th
   expect_no_error(toyIgRun(withYearClimate(twoFolds(covs = noYear), toyClimate)))
 })
 
+test_that("the year mean is taken before na.omit: an NA in an unrelated column does not leave the pixel out of it", {
+  covs <- toyIgCovariates(MDC = c(120, 140, 160, 180))     # mean 150 over the four pixels, 153.3 without pixel 2
+  data.table::set(covs, NULL, "lightningDays", c(1, NA, 1, 1))
+  sim <- toyIgRun(withYearClimate(twoFolds(covs = covs), toyClimate))
+  expect_equal(probVals(sim)[c(1, 3, 4), "ignitionProb"], c(0, 3, 0) * exp(0.5 * (150 - 130) / 20))
+})
+
 test_that("a fit with a year climate term and covariates without coreFraction stops with a clear message", {
   noCore <- toyIgCovariates(); data.table::set(noCore, NULL, "coreFraction", NULL)
   expect_error(toyIgRun(withYearClimate(twoFolds(covs = noCore), toyClimate)), "no `coreFraction` column")

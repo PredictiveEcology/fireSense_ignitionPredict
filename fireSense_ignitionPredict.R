@@ -168,6 +168,9 @@ IgnitionPredictRun <- function(sim) {
   sim$fireSense_IgAndEscapeDistribution <- list(ignition = fitObjective(fits, "ign"),
                                                 escape = fitObjective(fits, "esc"))
   stopIfStoredFitsProblem(fits, igCov)
+  ## the year climate term averages the covariate as the fit did, before `na.omit()` (a row with an NA in some other column
+  ## counts, as it does in the fit's table); the rows of each fit's ELF, by the same ELF assignment
+  rawByFit <- rawCovariatesByFit(sim, fits)
 
   # From here, it makes predictions from each KFold, then averages them to get the expected counts for
   #   each cell; same for Escape (expected escapes given an ignition), for every cell.
@@ -179,7 +182,7 @@ IgnitionPredictRun <- function(sim) {
     #   own mean and sd would make every year look average.
     covsIgn <- if (rescaleVars) scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted") else covsHere
     covsEsc <- if (rescaleVars) scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted") else covsHere
-    predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn) * yearClimateMultiplierOf(f$ign, covsHere)
+    predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn) * yearClimateMultiplierOf(f$ign, rawByFit[[f$elf]])
     predsEscs[f$rows] <- fireSenseUtils::foldMeanPrediction(f$esc, covsEsc)
     sdIgns[f$rows] <- yearSDOf(f$ign)
     sdEscs[f$rows] <- yearSDOf(f$esc)
@@ -323,6 +326,22 @@ yearSDOf <- function(fit) {
   if (is.null(sd)) 0 else sd
 }
 
+#' The covariates of each fit's pixels before `na.omit()`, for the year climate term
+#'
+#' `IgnitionPredictRun()` predicts only pixels with no `NA` in any covariate, but the fit's year climate mean
+#' (`fireSenseUtils::yearClimateMeans()`) is over the fit table as it is: only `NA` in the variable or `coreFraction`
+#' leave a row out. So the term's mean is taken from the covariates as they are, for the pixels of the fit's ELF.
+#'
+#' @param sim A `simList`.
+#' @param fits The result of `ignitionFitsByELF()` (on the pixels left after `na.omit()`).
+#' @return `NULL` if no fit has a year climate term, else a list of the covariate rows of each fit's ELF, named by `elf`.
+rawCovariatesByFit <- function(sim, fits) {
+  if (!any(vapply(fits, function(f) !is.null(f$ign$modelList$yearClimate), logical(1)))) return(NULL)
+  all <- sim$fireSense_igAndEscapePred_Covariates
+  byELF <- suppressWarnings(ignitionFitsByELF(sim, all$pixelID))   # its warning of pixels in no ELF was given for the same pixels
+  stats::setNames(lapply(byELF, function(f) all[f$rows]), vapply(byELF, function(f) f$elf, ""))
+}
+
 #' The year climate multiplier of a fit's expected ignitions
 #'
 #' `fireSense_ignitionFit` stores `modelList$yearClimate` (`list(variable, center, scale, beta, norm)`) with a year
@@ -332,7 +351,7 @@ yearSDOf <- function(fit) {
 #' usable row, with a warning. Stops if the covariates hold more than one year, or lack the variable or `coreFraction`.
 #'
 #' @param fit A `fireSense_IgnitionFitted`.
-#' @param covariates The raw (not standardised) covariates of the fit's pixels, one year.
+#' @param covariates The raw (not standardised) covariates of the fit's pixels, one year, before `na.omit()` (`rawCovariatesByFit()`).
 #' @return One number.
 yearClimateMultiplierOf <- function(fit, covariates) {
   yc <- fit$modelList$yearClimate

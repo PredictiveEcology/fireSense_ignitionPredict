@@ -95,3 +95,12 @@ test_that("with one fit, a stored fit missing features stops, naming the fit", {
   o$fireSense_IgnitionFitted$modelList$model$Fold1$features <- c("MDC", "nonexistentCov")
   expect_error(toyIgRun(o), "ignition fit of ELF \\(one fit\\).*nonexistentCov")
 })
+
+test_that("each ELF's fit applies its own year climate term, or none", {
+  ## A: pixels 1, 3 (MDC 100, 140: mean 120); B: pixels 2, 4 (MDC 120, 160: mean 140)
+  o <- multiInputs()
+  o$fireSense_IgnitionFittedList$A$modelList$yearClimate <- list(variable = "MDC", center = 100, scale = 10, beta = 0.5, norm = 1)
+  expect_equal(probVals(toyIgRun(o))[, "ignitionProb"], c(2 * exp(1), 5, 2 * exp(1), 5))     # B has none
+  o$fireSense_IgnitionFittedList$B$modelList$yearClimate <- list(variable = "MDC", center = 140, scale = 10, beta = 1, norm = 2)
+  expect_equal(probVals(toyIgRun(o))[, "ignitionProb"], c(2 * exp(1), 5 / 2, 2 * exp(1), 5 / 2))
+})

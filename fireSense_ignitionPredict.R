@@ -20,7 +20,7 @@ defineModule(sim, list(
     "data.table", "magrittr", "terra", "xgboost (>= 3.0.0)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9182)" # 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
+    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9183)" # 9183: yearClimateMeans(covariates, variable) unweighted, yearClimateMultiplier() norm; 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),
   parameters = bindrows(
@@ -325,18 +325,28 @@ yearSDOf <- function(fit) {
 
 #' The year climate multiplier of a fit's expected ignitions
 #'
-#' `fireSense_ignitionFit` stores `modelList$yearClimate` (`list(variable, center, scale, beta)`) with a year climate
-#' term; the multiplier is `fireSenseUtils::yearClimateMultiplier()` of this year's mean of the raw covariate over
-#' the fit's pixels. The fit standardised with the exposure-weighted mean over the core of its ELF; here it is the
-#' plain mean over the ELF's pixels. A fit without the term (older fits) gives 1.
+#' `fireSense_ignitionFit` stores `modelList$yearClimate` (`list(variable, center, scale, beta, norm)`) with a year
+#' climate term; the multiplier is `fireSenseUtils::yearClimateMultiplier()` of this year's mean of the raw covariate
+#' over the fit's pixels, `fireSenseUtils::yearClimateMeans()`, the same definition the fit used (unweighted mean over
+#' the rows with no `NA` and with core). A fit without the term (older fits) gives 1, and so does a year with no
+#' usable row, with a warning. Stops if the covariates hold more than one year, or lack the variable.
 #'
 #' @param fit A `fireSense_IgnitionFitted`.
-#' @param covariates The raw (not standardised) covariates of the fit's pixels.
+#' @param covariates The raw (not standardised) covariates of the fit's pixels, one year.
 #' @return One number.
 yearClimateMultiplierOf <- function(fit, covariates) {
   yc <- fit$modelList$yearClimate
   if (is.null(yc)) return(1)
-  fireSenseUtils::yearClimateMultiplier(yc, mean(covariates[[fireSenseUtils::yearClimateColumn(yc$variable, names(covariates))]]))
+  m <- fireSenseUtils::yearClimateMeans(covariates, yc$variable)
+  if (nrow(m) > 1L)
+    stop("fireSense_ignitionPredict: the covariates to predict hold ", nrow(m), " years (", paste(m$year, collapse = ", "),
+         "), but the year climate term is of one year.", call. = FALSE)
+  if (nrow(m) == 0L || !is.finite(m$mean)) {
+    warning("fireSense_ignitionPredict: no ", yc$variable, " to give the year climate multiplier of this year's ",
+            "ignitions; it is 1.", call. = FALSE)
+    return(1)
+  }
+  fireSenseUtils::yearClimateMultiplier(yc, m$mean)
 }
 
 #' A fit's fitted year effect of one year

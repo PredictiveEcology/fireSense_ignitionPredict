@@ -135,14 +135,14 @@ withYearClimate <- function(ins, yc) {
   ins$fireSense_IgnitionFitted$modelList$yearClimate <- yc
   ins
 }
-toyClimate <- list(variable = "MDC", center = 130, scale = 20, beta = 0.5)
+toyClimate <- list(variable = "MDC", center = 130, scale = 20, beta = 0.5, norm = 1)
 
 test_that("a fit without a year climate term gives a multiplier of 1", {
   expect_identical(yearClimateMultiplierOf(twoFolds()$fireSense_IgnitionFitted, toyIgCovariates()), 1)
   expect_equal(probVals(toyIgRun(twoFolds()))[, "ignitionProb"], c(0, 3, 3, 0))
 })
 
-test_that("a drier year raises the expected ignitions by exp(beta * z), escapes untouched", {
+test_that("a drier year raises the expected ignitions by exp(beta * z) / norm, escapes untouched", {
   ## the mean MDC of the toy year is 130 = the fit's centre: no change
   expect_equal(probVals(toyIgRun(withYearClimate(twoFolds(), toyClimate)))[, "ignitionProb"], c(0, 3, 3, 0))
   ## 20 drier: z = 1
@@ -150,7 +150,35 @@ test_that("a drier year raises the expected ignitions by exp(beta * z), escapes 
   sim <- toyIgRun(withYearClimate(dry, toyClimate))
   expect_equal(probVals(sim)[, "ignitionProb"], c(0, 3, 3, 0) * exp(0.5))
   expect_equal(probVals(sim)[, "escapeProb"], rep(1, 4))
+  expect_equal(probVals(toyIgRun(withYearClimate(dry, modifyList(toyClimate, list(norm = 2)))))[, "ignitionProb"],
+               c(0, 3, 3, 0) * exp(0.5) / 2)
   ## beta 0 is no term
   sim0 <- toyIgRun(withYearClimate(dry, modifyList(toyClimate, list(beta = 0))))
   expect_equal(probVals(sim0)[, "ignitionProb"], c(0, 3, 3, 0))
+  ## the raw column is used whether or not the models see standardised covariates
+  expect_equal(probVals(toyIgRun(withYearClimate(dry, toyClimate), params = list(rescaleVars = FALSE)))[, "ignitionProb"],
+               c(0, 3, 3, 0) * exp(0.5))
+})
+
+test_that("the multiplier is the fit's definition: unweighted mean over the rows with core and no NA", {
+  covs <- data.frame(year = 2001, MDC = c(100, 140, 1000, 120), coreFraction = c(1, 0.1, 0, 1), other = c(1, 1, 1, NA))
+  ## rows 1 and 2 count (row 3 has no core, row 4 an NA): mean 120, whatever the coreFraction of the others
+  expect_equal(yearClimateMultiplierOf(withYearClimate(twoFolds(), toyClimate)$fireSense_IgnitionFitted, covs),
+               exp(0.5 * (120 - 130) / 20))
+})
+
+test_that("a stored variable missing from the covariates, or several years in them, stop", {
+  expect_error(toyIgRun(withYearClimate(twoFolds(), modifyList(toyClimate, list(variable = "CMDsm")))),
+               "not among the covariates")
+  two <- twoFolds(covs = toyIgCovariates(year = c(2001, 2001, 2002, 2002)))
+  expect_error(toyIgRun(withYearClimate(two, toyClimate)), "hold 2 years")
+  ## no year column: all rows are one year
+  noYear <- toyIgCovariates(); data.table::set(noYear, NULL, "year", NULL)
+  expect_no_error(toyIgRun(withYearClimate(twoFolds(covs = noYear), toyClimate)))
+})
+
+test_that("a year with no usable covariate gives a multiplier of 1 and a warning", {
+  expect_warning(m <- yearClimateMultiplierOf(withYearClimate(twoFolds(), toyClimate)$fireSense_IgnitionFitted,
+                                              toyIgCovariates()[integer(0), , drop = FALSE]), "it is 1")
+  expect_identical(m, 1)
 })

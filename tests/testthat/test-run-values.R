@@ -209,13 +209,18 @@ test_that("an escape fit's year climate term scales the expected escapes by the 
   simB <- toyIgRun(both)
   expect_equal(probVals(simB)[, "ignitionProb"], c(0, 3, 3, 0) * exp(0.5))
   expect_equal(probVals(simB)[, "escapeProb"], rep(1, 4) * exp(0.3) / 2)
-  ## the hinge: the dry half is steeper
-  dry$fireSense_EscapeFitted$modelList$yearClimate$beta2 <- 0.4
-  expect_equal(probVals(toyIgRun(dry))[, "escapeProb"], rep(1, 4) * exp(0.3 + 0.4) / 2)
-  ## a wet year (z = -1) does not feel it
-  wet <- twoFolds(covs = toyIgCovariates(MDC = c(100, 120, 140, 160) - 20))
-  wet$fireSense_EscapeFitted$modelList$yearClimate <- dry$fireSense_EscapeFitted$modelList$yearClimate
-  expect_equal(probVals(toyIgRun(wet))[, "escapeProb"], rep(1, 4) * exp(-0.3) / 2)
+  ## a logistic escape term, from the stored fit: S-curve through z = 0, floor 1, upper level `ratio`
+  lgs <- list(variable = "MDC", center = 130, scale = 20, shape = "logistic", k = 2, ratio = 4, norm = 2)
+  dry$fireSense_EscapeFitted$modelList$yearClimate <- lgs
+  expect_equal(probVals(toyIgRun(dry))[, "escapeProb"], rep(1, 4) * (1 + 3 * stats::plogis(2)) / 2)
+  ## far beyond the fit range it saturates at the upper level over norm
+  vdry <- twoFolds(covs = toyIgCovariates(MDC = c(100, 120, 140, 160) + 2000))
+  vdry$fireSense_EscapeFitted$modelList$yearClimate <- lgs
+  expect_equal(probVals(toyIgRun(vdry))[, "escapeProb"], rep(1, 4) * 4 / 2)
+  ## the wet side is the floor
+  wet <- twoFolds(covs = toyIgCovariates(MDC = c(100, 120, 140, 160) - 2000))
+  wet$fireSense_EscapeFitted$modelList$yearClimate <- lgs
+  expect_equal(probVals(toyIgRun(wet))[, "escapeProb"], rep(1, 4) * 1 / 2)
   ## no term (the default): escapes are untouched
   expect_equal(probVals(toyIgRun(twoFolds(covs = toyIgCovariates(MDC = c(100, 120, 140, 160) + 20))))[, "escapeProb"], rep(1, 4))
 })

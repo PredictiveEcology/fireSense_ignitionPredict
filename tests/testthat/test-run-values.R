@@ -196,3 +196,33 @@ test_that("a year with no usable covariate gives a multiplier of 1 and a warning
                                               toyIgCovariates()[integer(0), , drop = FALSE]), "it is 1")
   expect_identical(m, 1)
 })
+
+## the year climate term of the escapes (fireSense_ignitionFit's `escapeYearClimate`), with the same year mean
+test_that("an escape fit's year climate term scales the expected escapes by the same z, ignitions untouched", {
+  dry <- twoFolds(covs = toyIgCovariates(MDC = c(100, 120, 140, 160) + 20))   # z = 1
+  dry$fireSense_EscapeFitted$modelList$yearClimate <- modifyList(toyClimate, list(beta = 0.3, norm = 2))
+  sim <- toyIgRun(dry)
+  expect_equal(probVals(sim)[, "escapeProb"], rep(1, 4) * exp(0.3) / 2)
+  expect_equal(probVals(sim)[, "ignitionProb"], c(0, 3, 3, 0))
+  ## both terms at once: each fit's own beta, one z
+  both <- withYearClimate(dry, toyClimate)
+  simB <- toyIgRun(both)
+  expect_equal(probVals(simB)[, "ignitionProb"], c(0, 3, 3, 0) * exp(0.5))
+  expect_equal(probVals(simB)[, "escapeProb"], rep(1, 4) * exp(0.3) / 2)
+  ## the hinge: the dry half is steeper
+  dry$fireSense_EscapeFitted$modelList$yearClimate$beta2 <- 0.4
+  expect_equal(probVals(toyIgRun(dry))[, "escapeProb"], rep(1, 4) * exp(0.3 + 0.4) / 2)
+  ## a wet year (z = -1) does not feel it
+  wet <- twoFolds(covs = toyIgCovariates(MDC = c(100, 120, 140, 160) - 20))
+  wet$fireSense_EscapeFitted$modelList$yearClimate <- dry$fireSense_EscapeFitted$modelList$yearClimate
+  expect_equal(probVals(toyIgRun(wet))[, "escapeProb"], rep(1, 4) * exp(-0.3) / 2)
+  ## no term (the default): escapes are untouched
+  expect_equal(probVals(toyIgRun(twoFolds(covs = toyIgCovariates(MDC = c(100, 120, 140, 160) + 20))))[, "escapeProb"], rep(1, 4))
+})
+
+test_that("an escape fit with a term and covariates without coreFraction stops", {
+  noCore <- toyIgCovariates(); data.table::set(noCore, NULL, "coreFraction", NULL)
+  ins <- twoFolds(covs = noCore)
+  ins$fireSense_EscapeFitted$modelList$yearClimate <- toyClimate
+  expect_error(toyIgRun(ins), "no `coreFraction` column")
+})

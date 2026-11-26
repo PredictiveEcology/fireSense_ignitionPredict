@@ -20,7 +20,7 @@ defineModule(sim, list(
     "data.table", "magrittr", "terra", "xgboost (>= 3.0.0)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9184)" # 9184: yearClimateMeans(covariates, variable) unweighted, yearClimateMultiplier() norm; 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
+    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9195)" # 9195: fireSenseUtils#264 (yearClimateMultiplier() reads the logistic term, logisticYearCurve()); TODO change if another fireSenseUtils PR merges before #264; 9194: annualYearWeights(), standardiseYearClimate() (#263); 9184: yearClimateMeans(covariates, variable) unweighted, yearClimateMultiplier() norm; 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),
   parameters = bindrows(
@@ -145,8 +145,8 @@ doEvent.fireSense_ignitionPredict <- function(sim, eventTime, eventType, debug =
 #' Averages the per-fold predictions of the ignition models and of the escape models, for every coarse
 #' pixel with covariates (`fireSenseUtils::foldMeanPrediction()`), and gives each pixel its fits' year-effect sd
 #' (`yearSDOf()`) and, when they have one, their fitted effect of this year (`yearEffectOf()`). A fit with a year
-#' climate term (`modelList$yearClimate`, `fireSense_ignitionFit`'s `ignitionYearClimate`) has its expected ignitions
-#' multiplied by `yearClimateMultiplierOf()`; escapes have none. Nothing is
+#' climate term (`modelList$yearClimate`, `fireSense_ignitionFit`'s `ignitionYearClimate` and `escapeYearClimate`) has its
+#' expected ignitions, or escapes, multiplied by `yearClimateMultiplierOf()`, the same year's mean for both. Nothing is
 #' drawn: `fireSense_burn` draws ignitions and escapes from these means,
 #' with the distribution named in `fireSense_IgAndEscapeDistribution`.
 #'
@@ -188,8 +188,9 @@ IgnitionPredictRun <- function(sim) {
     #   own mean and sd would make every year look average.
     covsIgn <- if (rescaleVars) scaleAsFit(covsHere, f$ign$scaleData, "fireSense_IgnitionFitted") else covsHere
     covsEsc <- if (rescaleVars) scaleAsFit(covsHere, f$esc$scaleData, "fireSense_EscapeFitted") else covsHere
-    predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn) * yearClimateMultiplierOf(f$ign, if (!is.null(f$ign$modelList$yearClimate)) igCovAll[f$allRows])
-    predsEscs[f$rows] <- fireSenseUtils::foldMeanPrediction(f$esc, covsEsc)
+    ## `covariates` of `yearClimateMultiplierOf()` is read only by a fit with a term (lazy), the same year mean for both
+    predsIgns[f$rows] <- fireSenseUtils::foldMeanPrediction(f$ign, covsIgn) * yearClimateMultiplierOf(f$ign, igCovAll[f$allRows])
+    predsEscs[f$rows] <- fireSenseUtils::foldMeanPrediction(f$esc, covsEsc) * yearClimateMultiplierOf(f$esc, igCovAll[f$allRows])
     sdIgns[f$rows] <- yearSDOf(f$ign)
     sdEscs[f$rows] <- yearSDOf(f$esc)
     effIgns[f$rows] <- yearEffectOf(f$ign, year)
@@ -332,16 +333,16 @@ yearSDOf <- function(fit) {
   if (is.null(sd)) 0 else sd
 }
 
-#' The year climate multiplier of a fit's expected ignitions
+#' The year climate multiplier of a fit's expected ignitions or escapes
 #'
 #' `fireSense_ignitionFit` stores `modelList$yearClimate` (`list(variable, center, scale, beta, norm)`) with a year
 #' climate term; the multiplier is `fireSenseUtils::yearClimateMultiplier()` of this year's mean of the raw covariate
-#' over the fit's pixels, `fireSenseUtils::yearClimateMeans()`, the same definition the fit used (unweighted mean over
+#' over the fit's pixels, `fireSenseUtils::yearClimateMeans()`, the same definition the fit used (the ignition covariates' means, for an escape fit too) (unweighted mean over
 #' the rows with the variable and with core: it needs the `coreFraction` column `fireSense_dataPrepPredict` adds). A fit without the term (older fits) gives 1, and so does a year with no
 #' usable row, with a warning. Stops if the covariates hold more than one year, or lack the variable or `coreFraction`.
 #'
-#' @param fit A `fireSense_IgnitionFitted`.
-#' @param covariates The raw (not standardised) covariates of the fit's pixels, one year, before `na.omit()` (`f$allRows` of `IgnitionPredictRun()`); not used by a fit without the term.
+#' @param fit A `fireSense_IgnitionFitted` or `fireSense_EscapeFitted`.
+#' @param covariates The raw (not standardised) covariates of the fit's pixels, one year, before `na.omit()` (`f$allRows` of `IgnitionPredictRun()`); not used (not evaluated) by a fit without the term.
 #' @return One number.
 yearClimateMultiplierOf <- function(fit, covariates) {
   yc <- fit$modelList$yearClimate

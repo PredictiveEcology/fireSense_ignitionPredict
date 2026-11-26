@@ -20,7 +20,7 @@ defineModule(sim, list(
     "data.table", "magrittr", "terra", "xgboost (>= 3.0.0)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9194)" # TODO set to the real post-#264 version after merge (fireSenseUtils#264: yearClimateMultiplier() reads beta2); 9184: yearClimateMeans(covariates, variable) unweighted, yearClimateMultiplier() norm; 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
+    "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9194)" # TODO set to the real post-#264 version after merge (fireSenseUtils#264: yearClimateMultiplier() reads the logistic term, logisticYearCurve()); 9184: yearClimateMeans(covariates, variable) unweighted, yearClimateMultiplier() norm; 9182: yearClimateColumn(), yearClimateMultiplier(); 9177: storedFitProblem(); 9168: foldModels(), foldMeanPrediction()
   ),
   loadOrder = list(after = "fireSense_dataPrepPredict"),
   parameters = bindrows(
